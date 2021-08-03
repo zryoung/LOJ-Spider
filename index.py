@@ -1,8 +1,12 @@
+'''
+Date: 2021-08-03 09:49:39
+LastEditors: Steve Li
+LastEditTime: 2021-08-03 11:31:42
+FilePath: \c++d:\Programming\python\loj-spider\index.py
+'''
 from requests import *
 from json import dumps,loads
-from threadpool import ThreadPool,makeRequests
 from os import mkdir,chdir
-pool = ThreadPool(8);
 num = post("https://api.loj.ac/api/problem/queryProblemSet",headers = {
     "Content-Type": "application/json"
 },data=dumps({"locale":"zh_CN","skipCount":0,"takeCount":50})).json()["count"]
@@ -34,8 +38,8 @@ def downloadProblem(id):
             if(i["type"]=='Text'):
                 f.write(i["text"]+"\n");
             elif(i["type"]=="Sample"):
-                f.write("### Input\n"+dat["samples"][i["sampleId"]]["inputData"]+"\n");
-                f.write("### Output\n"+dat["samples"][i["sampleId"]]["outputData"]+"\n");
+                f.write("### Input\n```"+dat["samples"][i["sampleId"]]["inputData"]+"```\n");
+                f.write("### Output\n```"+dat["samples"][i["sampleId"]]["outputData"]+"```\n");
     try:
         mkdir("testData");
     except Exception as e:
