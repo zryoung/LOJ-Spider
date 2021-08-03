@@ -1,9 +1,3 @@
-'''
-Date: 2021-08-03 09:49:39
-LastEditors: Steve Li
-LastEditTime: 2021-08-03 11:31:42
-FilePath: \c++d:\Programming\python\loj-spider\index.py
-'''
 from requests import *
 from json import dumps,loads
 from os import mkdir,chdir
