@@ -32,8 +32,8 @@ def downloadProblem(id):
             if(i["type"]=='Text'):
                 f.write(i["text"]+"\n");
             elif(i["type"]=="Sample"):
-                f.write("### Input\n```"+dat["samples"][i["sampleId"]]["inputData"]+"```\n");
-                f.write("### Output\n```"+dat["samples"][i["sampleId"]]["outputData"]+"```\n");
+                f.write("### Input\n```\n"+dat["samples"][i["sampleId"]]["inputData"]+"```\n");
+                f.write("### Output\n```\n"+dat["samples"][i["sampleId"]]["outputData"]+"```\n");
     try:
         mkdir("testData");
     except Exception as e:
@@ -55,7 +55,15 @@ def downloadProblem(id):
     chdir("..")
     chdir("..")
     print("No."+str(id)+" Done");
-for i in range(0,num,8):
-    list = post("https://api.loj.ac/api/problem/queryProblemSet",headers = {"Content-Type": "application/json"},data=dumps({"locale":"zh_CN","skipCount":i,"takeCount":8})).json()["result"]
-    for j in list:
-        downloadProblem(j["meta"]["displayId"])
+nowi = 0;
+try:
+    for i in range(0,num,8):
+        list = post("https://api.loj.ac/api/problem/queryProblemSet",headers = {"Content-Type": "application/json"},data=dumps({"locale":"zh_CN","skipCount":i,"takeCount":8})).json()["result"]
+        for j in list:
+            nowi=j["meta"]["displayId"];
+            downloadProblem(j["meta"]["displayId"])
+except KeyboardInterrupt as e:
+    print("Download Interupted...\n Saving Files... ",end="");
+    with open("history.dat","w+") as f:
+        f.write(str(nowi))
+    print("Done");
