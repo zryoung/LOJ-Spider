@@ -60,9 +60,9 @@ def downloadProblem(id):
         mkdir("testData");
     except Exception as e:
         pass
-    chdir("testData")
+    # chdir("testData")
     #get "config" file
-    with open("config.yaml", "w+") as f:
+    with open("testData/config.yaml", "w+") as f:
         judgeInfo = dat["judgeInfo"]
         if "timeLimit" in judgeInfo.keys():
             f.write("time:" + str(judgeInfo["timeLimit"]) + "ms\n")
@@ -81,24 +81,25 @@ def downloadProblem(id):
     for i in URList:
         resp = get(i["downloadUrl"])
         try:
-            with open(i["filename"], "w+") as f:
+            with open("testData/" + i["filename"], "w+") as f:
                 f.write(resp.text);
         except Exception as e:
-            with open(i["filename"], "wb+") as f:
+            with open("testData/" + i["filename"], "wb+") as f:
                 f.write(resp.content);
-    chdir("..")
     chdir("..")
     print("No." + str(id) + " Done");
 
 
+
 nowi = 0;
 try:
-    for i in range(0, num, 8):
+    for i in range(13, num, 8):
         list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
                     data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
         for j in list:
             nowi = j["meta"]["displayId"];
             downloadProblem(j["meta"]["displayId"])
+
 except KeyboardInterrupt as e:
     print("Download Interupted...\n Saving Files... ", end="");
     with open("history.dat", "w+") as f:
