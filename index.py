@@ -35,7 +35,7 @@ def downloadProblem(id):
     except Exception as e:
         pass
     chdir(str(id));
-    with open("Description.md", "w+") as f:
+    with open("Description.md", "w+", encoding="utf-8") as f:
         # f.write()
         content = dat["localizedContentsOfLocale"]["contentSections"]
         for i in content:
@@ -93,7 +93,7 @@ def downloadProblem(id):
 
 nowi = 0;
 try:
-    for i in range(13, num, 8):
+    for i in range(14, num, 8):
         list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
                     data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
         for j in list:
