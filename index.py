@@ -3,21 +3,21 @@ from json import dumps, loads
 from os import mkdir, chdir
 from queue import Queue
 import threading
-
-num = post("https://api.loj.ac/api/problem/queryProblemSet", headers={
-    "Content-Type": "application/json"
-}, data=dumps({"locale": "zh_CN", "skipCount": 0, "takeCount": 50})).json()["count"]
+import time
+import schedule
 
 
 def getProblemMeta(id):
     return post("https://api.loj.ac/api/problem/getProblem", headers={
         "Content-Type": "application/json",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
-    }, data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN", "tagsOfLocale": "zh_CN", "judgeInfo": True,
+    }, data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
+                   "tagsOfLocale": "zh_CN", "judgeInfo": True,
                    "samples": True})).json()
 
 
 totlist = []
+failList = []
 
 
 def getDataURL(filenamelist, id):
@@ -29,27 +29,27 @@ def getDataURL(filenamelist, id):
                 })).json()["downloadInfo"]
 
 
-def downloadProblem(id):
-    # print("Started Downloading LOJ No."+str(id)+" ...",end="");
-    dat = getProblemMeta(id)
+def downloadProblem(displayId, id):
+    # print("Started Downloading LOJ No."+str(displayId)+" ...",end="");
+    dat = getProblemMeta(displayId)
     try:
-        mkdir(str(id));
+        mkdir(str(displayId))
     except Exception as e:
         pass
-    # chdir(str(id));
-    with open(str(id) + "/Description.md", "w+", encoding="utf-8") as f:
+    # chdir(str(displayId));
+    with open(str(displayId) + "/Description.md", "w+", encoding="utf-8") as f:
         # f.write()
         content = dat["localizedContentsOfLocale"]["contentSections"]
         for i in content:
             f.write("## " + i["sectionTitle"] + "\n")
-            if (i["type"] == 'Text'):
-                f.write(i["text"] + "\n");
-            elif (i["type"] == "Sample"):
-                f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "```\n");
-                f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "```\n");
+            if i["type"] == 'Text':
+                f.write(i["text"] + "\n")
+            elif i["type"] == "Sample":
+                f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "```\n")
+                f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "```\n")
 
-    #get tag name
-    with open(str(id) + "/problem.yaml", "w+") as f:
+    # get tag name
+    with open(str(displayId) + "/problem.yaml", "w+") as f:
         f.write("owner:2\n")
         f.write("title:" + dat["localizedContentsOfLocale"]["title"] + "\n")
         f.write("tags:\n")
@@ -59,12 +59,12 @@ def downloadProblem(id):
             f.write(" - " + i["name"] + "\n")
 
     try:
-        mkdir(str(id) + "/testData");
+        mkdir(str(displayId) + "/testData")
     except Exception as e:
         pass
     # chdir("testData")
-    #get "config" file
-    with open(str(id) + "/testData/config.yaml", "w+") as f:
+    # get "config" file
+    with open(str(displayId) + "/testData/config.yaml", "w+") as f:
         judgeInfo = dat["judgeInfo"]
         if "timeLimit" in judgeInfo.keys():
             f.write("time:" + str(judgeInfo["timeLimit"]) + "ms\n")
@@ -74,22 +74,21 @@ def downloadProblem(id):
         if "type" in dat["meta"].keys():
             f.write("type:" + dat["meta"]["type"])
 
-
     testData = dat["testData"]
-    fnlist = [];
+    fnlist = []
     for i in testData:
         fnlist.append(i["filename"]);
     URList = getDataURL(fnlist, id)
     for i in URList:
         resp = get(i["downloadUrl"])
         try:
-            with open(str(id) + "/testData/" + i["filename"], "w+") as f:
-                f.write(resp.text);
+            with open(str(displayId) + "/testData/" + i["filename"], "w+") as f:
+                f.write(resp.text)
         except Exception as e:
-            with open(str(id) + "/testData/" + i["filename"], "wb+") as f:
-                f.write(resp.content);
+            with open(str(displayId) + "/testData/" + i["filename"], "wb+") as f:
+                f.write(resp.content)
     # chdir("..")
-    print("No." + str(id) + " Done");
+    print("No." + str(displayId) + " Done")
 
 
 class worker(threading.Thread):
@@ -105,32 +104,69 @@ class worker(threading.Thread):
 
             try:
                 # print("thread %s is running..." %threading.current_thread().name)
-                # print("%d downloading"%id)
+                # print("%d downloading"%displayId)
                 downloadProblem(id)
             except Exception as e:
                 print(e)
+                failList.append(str(id) + "failed." + str(e))
             self.queue.task_done()
 
-nowi = 0;
+
+def getNewProblem():
+    list = get("https://api.loj.ac.cn/api/homepage/getHomepage?locale=zh_CN", headers={
+        "Content-Type": "application/json"
+    }).json()["latestUpdatedProblems"]
+    # print(list)
+    for li in list:
+        # print(str(li["meta"]["displayId"]), li["title"], li["meta"]["publicTime"])
+        # print(time.strftime('%Y-%m-%d %H:%M:%S', li["meta"]["publicTime"]) - time.localtime(time.time()))
+        interval_time = (time.time() - time.mktime(
+            time.strptime(li["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
+        if interval_time < 24:
+            print("get new problem.", li["meta"]["displayId"])
+            downloadProblem(li["meta"]["displayId"], li["meta"]["id"])
+    #         queue.put(li["meta"]["displayId"])
+    #     if threading.activeCount() < 10:
+    #         t = worker(queue)
+    #         t.start()
+    #
+    # queue.join()
+    print("Updated!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+
+
+nowi = 0
 queue = Queue(maxsize=10)
 # num=25
-try:
-    for i in range(0, num, 8):
-        list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
-                    data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
-        for j in list:
-            nowi = j["meta"]["displayId"];
-            # downloadProblem(j["meta"]["displayId"])
-            queue.put(nowi)
+choice = input("请输入1或2选择下载最新题目或下载全部题目：\n"
+               "1.下载最新题目（持续监控题目更新）\n"
+               "2.下载全部题目（耗时很长）")
+if choice == '1':
+    # schedule.every().day.at("10:30").do(getNewProblem())  # 每天的10:30执行一次任务
+    getNewProblem()
+else:
+    num = post("https://api.loj.ac/api/problem/queryProblemSet", headers={
+        "Content-Type": "application/json"
+    }, data=dumps({"locale": "zh_CN", "skipCount": 0, "takeCount": 50})).json()["count"]
 
-            if threading.activeCount() < 10:
-                t = worker(queue)
-                t.start()
+    try:
+        for i in range(0, num, 8):
+            list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
+                        data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
+            for j in list:
+                nowi = j["meta"]["displayId"]
+                # downloadProblem(j["meta"]["displayId"])
+                queue.put(nowi)
 
-except KeyboardInterrupt as e:
-    print("Download Interupted...\n Saving Files... ", end="");
-    with open("history.dat", "w+") as f:
-        f.write(str(nowi))
-    print("Done");
+                if threading.activeCount() < 10:
+                    t = worker(queue)
+                    t.start()
 
-queue.join()
+    except KeyboardInterrupt as e:
+        print("Download Interupted...\n Saving Files... ", end="")
+        with open("history.dat", "w+") as f:
+            f.write(str(nowi))
+        print("Done")
+
+    queue.join()
+    with open("fail.txt", "w+") as f:
+        f.write(failList)
