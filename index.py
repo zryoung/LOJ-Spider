@@ -53,7 +53,7 @@ def downloadProblem(displayId, id):
 
     # get tag name
     if not os.path.exists(str(displayId) + "/problem.yaml"):
-        with open(str(displayId) + "/problem.yaml", "w+") as f:
+        with open(str(displayId) + "/problem.yaml", "w+", encoding='utf-8') as f:
             f.write("owner:2\n")
             f.write("title:" + dat["localizedContentsOfLocale"]["title"] + "\n")
             f.write("tags:\n")
