@@ -8,6 +8,8 @@ import threading
 import time
 import schedule
 
+directory = 'e:\\loj\\download\\'
+
 
 def getProblemMeta(id):
     return post("https://api.loj.ac/api/problem/getProblem", headers={
@@ -32,15 +34,16 @@ def getDataURL(filenamelist, id):
 
 
 def downloadProblem(displayId, id):
-    print("Started Downloading LOJ No."+str(displayId)+" ..."+time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+    print("Started Downloading LOJ No." + str(displayId) + " ..." + time.strftime("%Y-%m-%d %H:%M:%S",
+                                                                                  time.localtime(time.time())))
     dat = getProblemMeta(displayId)
-    try:
-        mkdir(str(displayId))
-    except Exception as e:
-        pass
+    # try:
+    #     mkdir(str(displayId))
+    # except Exception as e:
+    #     pass
     # chdir(str(displayId));
-    if not os.path.exists(str(displayId) + "/Description.md"):
-        with open(str(displayId) + "/Description.md", "w+", encoding="utf-8") as f:
+    if not os.path.exists(directory + str(displayId) + "/problem.md"):
+        with open(directory + str(displayId) + "/problem.md", "w+", encoding="utf-8") as f:
             # f.write()
             content = dat["localizedContentsOfLocale"]["contentSections"]
             for i in content:
@@ -52,8 +55,8 @@ def downloadProblem(displayId, id):
                     f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "```\n")
 
     # get tag name
-    if not os.path.exists(str(displayId) + "/problem.yaml"):
-        with open(str(displayId) + "/problem.yaml", "w+", encoding='utf-8') as f:
+    if not os.path.exists(directory + str(displayId) + "/problem.yaml"):
+        with open(directory + str(displayId) + "/problem.yaml", "w+", encoding='utf-8') as f:
             f.write("owner: 2\n")
             f.write("title: " + dat["localizedContentsOfLocale"]["title"] + "\n")
             f.write("tags:\n")
@@ -62,22 +65,22 @@ def downloadProblem(displayId, id):
             for i in content:
                 f.write(" - " + i["name"] + "\n")
 
-    try:
-        mkdir(str(displayId) + "/testdata")
-    except Exception as e:
-        pass
+    # try:
+    #     mkdir(str(displayId) + "/testdata")
+    # except Exception as e:
+    #     pass
     # chdir("testData")
     # get "config" file
-    if not os.path.exists(str(displayId) + "/testdata/config.yaml"):
-        with open(str(displayId) + "/testdata/config.yaml", "w+") as f:
+    if not os.path.exists(directory + str(displayId) + "/testdata/config.yaml"):
+        with open(directory + str(displayId) + "/testdata/config.yaml", "w+") as f:
             judgeInfo = dat["judgeInfo"]
             if "timeLimit" in judgeInfo.keys():
-                f.write("time:" + str(judgeInfo["timeLimit"]) + "ms\n")
+                f.write("time: " + str(judgeInfo["timeLimit"]) + "ms\n")
             if "memoryLimit" in judgeInfo.keys():
-                f.write("memory:" + str(judgeInfo["memoryLimit"]) + "m\n")
-            f.write("filename:null\n")
+                f.write("memory: " + str(judgeInfo["memoryLimit"]) + "m\n")
+            f.write("filename: null\n")
             if "type" in dat["meta"].keys():
-                f.write("type:" + dat["meta"]["type"])
+                f.write("type: " + dat["meta"]["type"])
 
     testdata = dat["testdata"]
     fnlist = []
@@ -85,13 +88,13 @@ def downloadProblem(displayId, id):
         fnlist.append(i["filename"])
     URList = getDataURL(fnlist, id)
     for i in URList:
-        if not os.path.exists(str(displayId) + "/testdata/" + i["filename"]):
+        if not os.path.exists(directory + str(displayId) + "/testdata/" + i["filename"]):
             resp = get(i["downloadUrl"])
             try:
-                with open(str(displayId) + "/testdata/" + i["filename"], "w+") as f:
+                with open(directory + str(displayId) + "/testdata/" + i["filename"], "w+") as f:
                     f.write(resp.text)
             except Exception as e:
-                with open(str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
+                with open(directory + str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
                     f.write(resp.content)
     # chdir("..")
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
@@ -111,10 +114,10 @@ class worker(threading.Thread):
             try:
                 # print("thread %s is running..." %threading.current_thread().name)
                 # print("%d downloading"%displayId)
-                downloadProblem(displayid,id)
+                downloadProblem(displayid, id)
             except Exception as e:
                 print(e)
-                with open("fail.txt", "a+") as f:
+                with open(directory + "fail.txt", "a+") as f:
                     f.write(str(displayid) + "failed." + str(e) + "\n")
             self.queue.task_done()
 
@@ -175,7 +178,7 @@ else:
 
     except KeyboardInterrupt as e:
         print("Download Interupted...\n Saving Files... ", end="")
-        with open("history.dat", "w+") as f:
+        with open(directory + "history.dat", "w+") as f:
             f.write(str(nowi))
         print("Done")
 
