@@ -63,13 +63,13 @@ def downloadProblem(displayId, id):
                 f.write(" - " + i["name"] + "\n")
 
     try:
-        mkdir(str(displayId) + "/testData")
+        mkdir(str(displayId) + "/testdata")
     except Exception as e:
         pass
     # chdir("testData")
     # get "config" file
-    if not os.path.exists(str(displayId) + "/testData/config.yaml"):
-        with open(str(displayId) + "/testData/config.yaml", "w+") as f:
+    if not os.path.exists(str(displayId) + "/testdata/config.yaml"):
+        with open(str(displayId) + "/testdata/config.yaml", "w+") as f:
             judgeInfo = dat["judgeInfo"]
             if "timeLimit" in judgeInfo.keys():
                 f.write("time:" + str(judgeInfo["timeLimit"]) + "ms\n")
@@ -79,19 +79,19 @@ def downloadProblem(displayId, id):
             if "type" in dat["meta"].keys():
                 f.write("type:" + dat["meta"]["type"])
 
-    testData = dat["testData"]
+    testdata = dat["testdata"]
     fnlist = []
-    for i in testData:
+    for i in testdata:
         fnlist.append(i["filename"])
     URList = getDataURL(fnlist, id)
     for i in URList:
-        if not os.path.exists(str(displayId) + "/testData/" + i["filename"]):
+        if not os.path.exists(str(displayId) + "/testdata/" + i["filename"]):
             resp = get(i["downloadUrl"])
             try:
-                with open(str(displayId) + "/testData/" + i["filename"], "w+") as f:
+                with open(str(displayId) + "/testdata/" + i["filename"], "w+") as f:
                     f.write(resp.text)
             except Exception as e:
-                with open(str(displayId) + "/testData/" + i["filename"], "wb+") as f:
+                with open(str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
                     f.write(resp.content)
     # chdir("..")
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
