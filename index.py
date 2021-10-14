@@ -8,7 +8,7 @@ import threading
 import time
 import schedule
 
-directory = 'e:\\loj\\download\\'
+directory = 'e:/LOJ/download/'
 
 
 def getProblemMeta(id):
@@ -37,10 +37,10 @@ def downloadProblem(displayId, id):
     print("Started Downloading LOJ No." + str(displayId) + " ..." + time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                   time.localtime(time.time())))
     dat = getProblemMeta(displayId)
-    # try:
-    #     mkdir(str(displayId))
-    # except Exception as e:
-    #     pass
+    try:
+        mkdir(directory + str(displayId))
+    except Exception as e:
+        pass
     # chdir(str(displayId));
     if not os.path.exists(directory + str(displayId) + "/problem.md"):
         with open(directory + str(displayId) + "/problem.md", "w+", encoding="utf-8") as f:
@@ -65,10 +65,10 @@ def downloadProblem(displayId, id):
             for i in content:
                 f.write(" - " + i["name"] + "\n")
 
-    # try:
-    #     mkdir(str(displayId) + "/testdata")
-    # except Exception as e:
-    #     pass
+    try:
+        mkdir(directory + str(displayId) + "/testdata")
+    except Exception as e:
+        pass
     # chdir("testData")
     # get "config" file
     if not os.path.exists(directory + str(displayId) + "/testdata/config.yaml"):
@@ -82,7 +82,7 @@ def downloadProblem(displayId, id):
             if "type" in dat["meta"].keys():
                 f.write("type: " + dat["meta"]["type"])
 
-    testdata = dat["testdata"]
+    testdata = dat["testData"]
     fnlist = []
     for i in testdata:
         fnlist.append(i["filename"])
@@ -164,8 +164,14 @@ else:
 
     try:
         for i in range(0, num, 8):
-            list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
-                        data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
+            try:
+                list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
+                            data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
+            except:
+                time.sleep(5)
+                list = \
+                post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
+                     data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
             for j in list:
                 nowi = j["meta"]["displayId"]
                 id = j["meta"]["id"]
