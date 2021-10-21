@@ -51,8 +51,9 @@ def downloadProblem(displayId, id):
                 if i["type"] == 'Text':
                     f.write(i["text"] + "\n")
                 elif i["type"] == "Sample":
-                    f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "```\n")
-                    f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "```\n")
+                    f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
+                    f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
+
 
     # get tag name
     if not os.path.exists(directory + str(displayId) + "/problem.yaml"):
@@ -81,6 +82,13 @@ def downloadProblem(displayId, id):
             f.write("filename: null\n")
             if "type" in dat["meta"].keys():
                 f.write("type: " + dat["meta"]["type"])
+                if dat["meta"]["type"] == "Traditional":
+                    f.write("default")
+                elif dat["meta"]["type"] == "Interaction":
+                    f.write("interactive")
+                elif dat["meta"]["type"] == "SubmitAnswer":
+                    f.write("submit_answer")
+
 
     testdata = dat["testData"]
     fnlist = []
@@ -97,6 +105,7 @@ def downloadProblem(displayId, id):
                 with open(directory + str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
                     f.write(resp.content)
     # chdir("..")
+
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
 
