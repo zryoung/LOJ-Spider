@@ -60,11 +60,11 @@ def downloadProblem(displayId, id):
         with open(directory + str(displayId) + "/problem.yaml", "w+", encoding='utf-8') as f:
             f.write("owner: 2\n")
             f.write("title: " + dat["localizedContentsOfLocale"]["title"] + "\n")
-            f.write("tags:\n")
+            f.write("tag:\n")
             # print(dat)
             content = dat["tagsOfLocale"]
             for i in content:
-                f.write(" - " + i["name"] + "\n")
+                f.write("  - " + i["name"] + "\n")
 
     try:
         mkdir(directory + str(displayId) + "/testdata")
