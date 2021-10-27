@@ -46,13 +46,20 @@ def downloadProblem(displayId, id):
         with open(directory + str(displayId) + "/problem.md", "w+", encoding="utf-8") as f:
             # f.write()
             content = dat["localizedContentsOfLocale"]["contentSections"]
+            sample_id = 0
             for i in content:
                 f.write("## " + i["sectionTitle"] + "\n")
                 if i["type"] == 'Text':
                     f.write(i["text"] + "\n")
                 elif i["type"] == "Sample":
-                    f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
-                    f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
+                    sample_id = sample_id + 1
+                    f.write("```input" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
+                    f.write("```output" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
+                    f.write(i["text"] + "\n")
+                    # f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
+                    # f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
+            f.write("### 来源\n")
+            f.write("![LOJ" + str(displayId) + "](" + "https://loj.ac/p/" + str(displayId) + ")\n")
 
 
     # get tag name
@@ -81,7 +88,7 @@ def downloadProblem(displayId, id):
                 f.write("memory: " + str(judgeInfo["memoryLimit"]) + "m\n")
             f.write("filename: null\n")
             if "type" in dat["meta"].keys():
-                f.write("type: " + dat["meta"]["type"])
+                f.write("type: ")
                 if dat["meta"]["type"] == "Traditional":
                     f.write("default")
                 elif dat["meta"]["type"] == "Interaction":
@@ -105,6 +112,25 @@ def downloadProblem(displayId, id):
                 with open(directory + str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
                     f.write(resp.content)
     # chdir("..")
+    addtional_data = dat["additionalFiles"]
+    if addtional_data:
+        try:
+            mkdir(directory + str(displayId) + "/testdata")
+        except Exception as e:
+            pass
+    fnlist = []
+    for i in addtional_data:
+        fnlist.append(i["filename"])
+    URList = getDataURL(fnlist, id)
+    for i in URList:
+        if not os.path.exists(directory + str(displayId) + "/additional_file/" + i["filename"]):
+            resp = get(i["downloadUrl"])
+            try:
+                with open(directory + str(displayId) + "/additional_file/" + i["filename"], "w+") as f:
+                    f.write(resp.text)
+            except Exception as e:
+                with open(directory + str(displayId) + "/additional_file/" + i["filename"], "wb+") as f:
+                    f.write(resp.content)
 
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
@@ -143,13 +169,13 @@ def getNewProblem():
             time.strptime(li["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
         if interval_time < 24:
             print("get new problem.", li["meta"]["displayId"])
-            downloadProblem(li["meta"]["displayId"], li["meta"]["id"])
-    #         queue.put(li["meta"]["displayId"])
-    #     if threading.activeCount() < 10:
-    #         t = worker(queue)
-    #         t.start()
-    #
-    # queue.join()
+            # downloadProblem(li["meta"]["displayId"], li["meta"]["id"])
+            queue.put((li["meta"]["displayId"], li["meta"]["id"]))
+        if threading.activeCount() < 10:
+            t = worker(queue)
+            t.start()
+
+    queue.join()
     print("Updated!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
 
@@ -161,7 +187,7 @@ choice = input("请输入1或2选择下载最新题目或下载全部题目：\n
                "2.下载全部题目（耗时很长）")
 print("Begin!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 if choice == '1':
-    schedule.every().day.at("10:30").do(getNewProblem)  # 每天的10:30执行一次任务
+    schedule.every().day.at("11:48").do(getNewProblem)  # 每天的4:30执行一次任务
     while True:
         schedule.run_pending()
         time.sleep(60)
