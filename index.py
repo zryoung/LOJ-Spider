@@ -47,6 +47,7 @@ def downloadProblem(displayId, id):
             # f.write()
             content = dat["localizedContentsOfLocale"]["contentSections"]
             sample_id = 0
+            # TODO: 题目有图片未解决
             for i in content:
                 f.write("## " + i["sectionTitle"] + "\n")
                 if i["type"] == 'Text':
@@ -90,12 +91,39 @@ def downloadProblem(displayId, id):
             if "type" in dat["meta"].keys():
                 f.write("type: ")
                 if dat["meta"]["type"] == "Traditional":
-                    f.write("default")
+                    f.write("default\n")
                 elif dat["meta"]["type"] == "Interaction":
-                    f.write("interactive")
+                    f.write("interactive\n")
+                    f.write("interactor: ")
+                    f.write(judgeInfo["interactor"]["filename"] + "\n")
+                    # TODO: other thing: compiler?,loj:3286
                 elif dat["meta"]["type"] == "SubmitAnswer":
-                    f.write("submit_answer")
-
+                    f.write("submit_answer\n")
+            if "subtasks" in judgeInfo.keys():
+                f.write("subtasks:\n")
+                for sub_task in judgeInfo["subtasks"]:
+                    if "points" in sub_task:
+                        f.write("  - score: ")
+                        f.write(str(sub_task["points"]) + "\n")
+                    f.write("    type: ")
+                    if sub_task["scoringType"] == "GroupMin":
+                        f.write("min\n")
+                    elif sub_task["scoringType"] == "Sum":
+                        f.write("sum\n")
+                    else:
+                        print(str(displayId) + sub_task["scoringType"])
+                    f.write("    cases: \n")
+                    for test_case in sub_task["testcases"]:
+                        if "inputFile" in test_case:
+                            f.write("      - input: ")
+                            f.write(test_case["inputFile"] + "\n")
+                        if "outputFile" in test_case:
+                            f.write("        output: ")
+                            f.write(test_case["outputFile"] + "\n")
+                    if "dependencies" in sub_task:
+                        f.write("    if: \n")
+                        for dependency in sub_task["dependencies"]:
+                            f.write("      - " + str(dependency) + "\n")
 
     testdata = dat["testData"]
     fnlist = []
@@ -115,22 +143,23 @@ def downloadProblem(displayId, id):
     addtional_data = dat["additionalFiles"]
     if addtional_data:
         try:
-            mkdir(directory + str(displayId) + "/testdata")
+            mkdir(directory + str(displayId) + "/additional_file")
         except Exception as e:
             pass
-    fnlist = []
-    for i in addtional_data:
-        fnlist.append(i["filename"])
-    URList = getDataURL(fnlist, id)
-    for i in URList:
-        if not os.path.exists(directory + str(displayId) + "/additional_file/" + i["filename"]):
-            resp = get(i["downloadUrl"])
-            try:
-                with open(directory + str(displayId) + "/additional_file/" + i["filename"], "w+") as f:
-                    f.write(resp.text)
-            except Exception as e:
-                with open(directory + str(displayId) + "/additional_file/" + i["filename"], "wb+") as f:
-                    f.write(resp.content)
+        fnlist = []
+        for i in addtional_data:
+            fnlist.append(i["filename"])
+        print(fnlist)
+        URList = getDataURL(fnlist, id)
+        for i in URList:
+            if not os.path.exists(directory + str(displayId) + "/additional_file/" + i["filename"]):
+                resp = get(i["downloadUrl"])
+                try:
+                    with open(directory + str(displayId) + "/additional_file/" + i["filename"], "w+") as f:
+                        f.write(resp.text)
+                except Exception as e:
+                    with open(directory + str(displayId) + "/additional_file/" + i["filename"], "wb+") as f:
+                        f.write(resp.content)
 
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 
@@ -187,7 +216,12 @@ choice = input("请输入1或2选择下载最新题目或下载全部题目：\n
                "2.下载全部题目（耗时很长）")
 print("Begin!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 if choice == '1':
-    schedule.every().day.at("11:48").do(getNewProblem)  # 每天的4:30执行一次任务
+    schedule.every().day.at("10:14").do(getNewProblem)  # 每天的4:30执行一次任务
+    # schedule.every(10).minutes.do(job)
+    schedule.every().hour.do(getNewProblem)  # 每小时执行一次
+    # schedule.every().day.at("10:30").do(job)
+    # schedule.every().monday.do(job)
+    # schedule.every().wednesday.at("13:15").do(job)
     while True:
         schedule.run_pending()
         time.sleep(60)
