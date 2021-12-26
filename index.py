@@ -7,12 +7,17 @@ from queue import Queue
 import threading
 import time
 import schedule
+from requests.adapters import HTTPAdapter
 
 directory = 'e:/LOJ/download/'
 
 
 def getProblemMeta(id):
-    return post("https://api.loj.ac/api/problem/getProblem", headers={
+    return post("https://api.loj.ac/api/problem/getProblem",
+                stream=True,
+                verify=False,
+                timeout=(5, 5),
+                headers={
         "Content-Type": "application/json",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
     }, data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
@@ -36,7 +41,23 @@ def getDataURL(filenamelist, id):
 def downloadProblem(displayId, id):
     print("Started Downloading LOJ No." + str(displayId) + " ..." + time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                   time.localtime(time.time())))
-    dat = getProblemMeta(displayId)
+    # dat = getProblemMeta(displayId)
+    sess = Session()
+    sess.mount('http://', HTTPAdapter(max_retries=3))
+    sess.mount('https://', HTTPAdapter(max_retries=3))
+    sess.keep_alive = False # 关闭多余连接
+    dat = post("https://api.loj.ac/api/problem/getProblem",
+         stream=True,
+         verify=False,
+         timeout=(5, 5),
+         headers={
+             "Content-Type": "application/json",
+             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+         },
+         data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
+                     "tagsOfLocale": "zh_CN", "judgeInfo": True,
+                     "samples": True})).json()
+
     try:
         mkdir(directory + str(displayId))
     except Exception as e:
@@ -139,7 +160,9 @@ def downloadProblem(displayId, id):
             except Exception as e:
                 with open(directory + str(displayId) + "/testdata/" + i["filename"], "wb+") as f:
                     f.write(resp.content)
+            resp.close()  # 关闭连接
     # chdir("..")
+    # TODO: 3558未成功下载附加文件
     addtional_data = dat["additionalFiles"]
     if addtional_data:
         try:
@@ -149,7 +172,7 @@ def downloadProblem(displayId, id):
         fnlist = []
         for i in addtional_data:
             fnlist.append(i["filename"])
-        print(fnlist)
+        # print(fnlist)
         URList = getDataURL(fnlist, id)
         for i in URList:
             if not os.path.exists(directory + str(displayId) + "/additional_file/" + i["filename"]):
@@ -160,8 +183,10 @@ def downloadProblem(displayId, id):
                 except Exception as e:
                     with open(directory + str(displayId) + "/additional_file/" + i["filename"], "wb+") as f:
                         f.write(resp.content)
+                resp.close()  # 关闭连接
 
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+    dat.close()  # 关闭连接
 
 
 class worker(threading.Thread):
@@ -190,16 +215,21 @@ def getNewProblem():
     list = get("https://api.loj.ac.cn/api/homepage/getHomepage?locale=zh_CN", headers={
         "Content-Type": "application/json"
     }).json()["latestUpdatedProblems"]
-    # print(list)
+    print(list)
     for li in list:
         # print(str(li["meta"]["displayId"]), li["title"], li["meta"]["publicTime"])
         # print(time.strftime('%Y-%m-%d %H:%M:%S', li["meta"]["publicTime"]) - time.localtime(time.time()))
-        interval_time = (time.time() - time.mktime(
-            time.strptime(li["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
-        if interval_time < 24:
+        # interval_time = (time.time() - time.mktime(
+        #     time.strptime(li["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
+        # if interval_time < 2:  # 1小时内更新的题目
+        #     print("get new problem.", li["meta"]["displayId"])
+        #     # downloadProblem(li["meta"]["displayId"], li["meta"]["id"])
+        #     queue.put((li["meta"]["displayId"], li["meta"]["id"]))
+        if not os.path.exists(directory + str(li["meta"]["displayId"])):
             print("get new problem.", li["meta"]["displayId"])
-            # downloadProblem(li["meta"]["displayId"], li["meta"]["id"])
             queue.put((li["meta"]["displayId"], li["meta"]["id"]))
+        else:
+            print("{}已经存在。".format(li["meta"]["id"]))
         if threading.activeCount() < 10:
             t = worker(queue)
             t.start()
@@ -216,12 +246,15 @@ choice = input("请输入1或2选择下载最新题目或下载全部题目：\n
                "2.下载全部题目（耗时很长）")
 print("Begin!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 if choice == '1':
-    schedule.every().day.at("10:14").do(getNewProblem)  # 每天的4:30执行一次任务
+    # nowTime = time.strftime("%H:%M", time.localtime())
+    # print(nowTime)
+    # schedule.every().day.at(nowTime).do(getNewProblem)  # 每天的4:30执行一次任务
     # schedule.every(10).minutes.do(job)
     schedule.every().hour.do(getNewProblem)  # 每小时执行一次
     # schedule.every().day.at("10:30").do(job)
     # schedule.every().monday.do(job)
     # schedule.every().wednesday.at("13:15").do(job)
+    schedule.run_all()
     while True:
         schedule.run_pending()
         time.sleep(60)
