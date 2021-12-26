@@ -7,9 +7,10 @@ from queue import Queue
 import threading
 import time
 import schedule
+from requests import packages
 from requests.adapters import HTTPAdapter
 
-directory = 'e:/LOJ/download/'
+directory = 'D:/A/LOJ/download/'
 
 
 def getProblemMeta(id):
@@ -38,14 +39,16 @@ def getDataURL(filenamelist, id):
                 })).json()["downloadInfo"]
 
 
-def downloadProblem(displayId, id):
+def downloadProblem(displayId):
     print("Started Downloading LOJ No." + str(displayId) + " ..." + time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                   time.localtime(time.time())))
     # dat = getProblemMeta(displayId)
+    
+    packages.urllib3.disable_warnings()
     sess = Session()
     sess.mount('http://', HTTPAdapter(max_retries=3))
     sess.mount('https://', HTTPAdapter(max_retries=3))
-    sess.keep_alive = False # 关闭多余连接
+    sess.keep_alive = False  # 关闭多余连接
     dat = post("https://api.loj.ac/api/problem/getProblem",
          stream=True,
          verify=False,
@@ -54,9 +57,10 @@ def downloadProblem(displayId, id):
              "Content-Type": "application/json",
              "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
          },
-         data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
+         data=dumps({"displayId": displayId, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
                      "tagsOfLocale": "zh_CN", "judgeInfo": True,
                      "samples": True})).json()
+    # print(dat)
 
     try:
         mkdir(directory + str(displayId))
@@ -81,7 +85,7 @@ def downloadProblem(displayId, id):
                     # f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
                     # f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
             f.write("### 来源\n")
-            f.write("![LOJ" + str(displayId) + "](" + "https://loj.ac/p/" + str(displayId) + ")\n")
+            f.write("[LOJ" + str(displayId) + "](" + "https://loj.ac/p/" + str(displayId) + ")\n")
 
 
     # get tag name
@@ -147,6 +151,7 @@ def downloadProblem(displayId, id):
                             f.write("      - " + str(dependency) + "\n")
 
     testdata = dat["testData"]
+    id = dat["meta"]["id"]
     fnlist = []
     for i in testdata:
         fnlist.append(i["filename"])
@@ -186,7 +191,7 @@ def downloadProblem(displayId, id):
                 resp.close()  # 关闭连接
 
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
-    dat.close()  # 关闭连接
+    
 
 
 class worker(threading.Thread):
@@ -198,12 +203,12 @@ class worker(threading.Thread):
         while True:
             if self.queue.empty():
                 break
-            displayid, id = queue.get()
+            displayid = queue.get()
 
             try:
                 # print("thread %s is running..." %threading.current_thread().name)
                 # print("%d downloading"%displayId)
-                downloadProblem(displayid, id)
+                downloadProblem(displayid)
             except Exception as e:
                 print(e)
                 with open(directory + "fail.txt", "a+") as f:
@@ -215,7 +220,7 @@ def getNewProblem():
     list = get("https://api.loj.ac.cn/api/homepage/getHomepage?locale=zh_CN", headers={
         "Content-Type": "application/json"
     }).json()["latestUpdatedProblems"]
-    print(list)
+    # print(list)
     for li in list:
         # print(str(li["meta"]["displayId"]), li["title"], li["meta"]["publicTime"])
         # print(time.strftime('%Y-%m-%d %H:%M:%S', li["meta"]["publicTime"]) - time.localtime(time.time()))
@@ -227,10 +232,10 @@ def getNewProblem():
         #     queue.put((li["meta"]["displayId"], li["meta"]["id"]))
         if not os.path.exists(directory + str(li["meta"]["displayId"])):
             print("get new problem.", li["meta"]["displayId"])
-            queue.put((li["meta"]["displayId"], li["meta"]["id"]))
+            queue.put(li["meta"]["displayId"])
         else:
-            print("{}已经存在。".format(li["meta"]["id"]))
-        if threading.activeCount() < 10:
+            print("{}已经存在。".format(li["meta"]["displayId"]))
+        if threading.active_count() < 10:
             t = worker(queue)
             t.start()
 
@@ -241,9 +246,11 @@ def getNewProblem():
 nowi = 0
 queue = Queue(maxsize=10)
 # num=25
-choice = input("请输入1或2选择下载最新题目或下载全部题目：\n"
-               "1.下载最新题目（持续监控题目更新）\n"
-               "2.下载全部题目（耗时很长）")
+choice = input('''请输入1或2选择下载最新题目或下载全部题目：
+               1.下载最新题目（持续监控题目更新）
+               2.指定题号信息下载。
+               3.下载全部题目（耗时很长）
+               ''')
 print("Begin!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 if choice == '1':
     # nowTime = time.strftime("%H:%M", time.localtime())
@@ -259,6 +266,8 @@ if choice == '1':
         schedule.run_pending()
         time.sleep(60)
     # getNewProblem()
+elif choice == '2':
+    pass
 else:
     num = post("https://api.loj.ac/api/problem/queryProblemSet", headers={
         "Content-Type": "application/json"
@@ -278,9 +287,9 @@ else:
                 nowi = j["meta"]["displayId"]
                 id = j["meta"]["id"]
                 # downloadProblem(j["meta"]["displayId"])
-                queue.put((nowi, id))
+                queue.put(nowi)
 
-                if threading.activeCount() < 10:
+                if threading.active_count() < 10:
                     t = worker(queue)
                     t.start()
 
