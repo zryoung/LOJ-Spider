@@ -10,7 +10,8 @@ import schedule
 from requests import packages
 from requests.adapters import HTTPAdapter
 
-directory = 'D:/A/LOJ/download/'
+directory = 'E:/LOJ/download/'
+delay_time = 1
 
 
 def getProblemMeta(id):
@@ -19,47 +20,53 @@ def getProblemMeta(id):
                 verify=False,
                 timeout=(5, 5),
                 headers={
-        "Content-Type": "application/json",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
-    }, data=dumps({"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
-                   "tagsOfLocale": "zh_CN", "judgeInfo": True,
-                   "samples": True})).json()
+                    "Content-Type": "application/json",
+                    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+                }, data=dumps(
+            {"displayId": id, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
+             "tagsOfLocale": "zh_CN", "judgeInfo": True,
+             "samples": True})).json()
 
 
 totlist = []
 failList = []
 
 
-def getDataURL(filenamelist, id):
-    return post("https://api.loj.ac/api/problem/downloadProblemFiles", headers={"Content-Type": "application/json"},
-                data=dumps({
-                    "problemId": id,
-                    "type": "TestData",
-                    "filenameList": filenamelist
-                })).json()["downloadInfo"]
+def getDataURL(filenamelist, id, type):
+    rsp = post("https://api.loj.ac/api/problem/downloadProblemFiles",
+               headers={"Content-Type": "application/json",
+                        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+                        },
+               data=dumps({
+                   "problemId": id,
+                   "type": type,
+                   "filenameList": filenamelist
+               })).json()
+    return rsp["downloadInfo"]
 
 
 def downloadProblem(displayId):
     print("Started Downloading LOJ No." + str(displayId) + " ..." + time.strftime("%Y-%m-%d %H:%M:%S",
                                                                                   time.localtime(time.time())))
     # dat = getProblemMeta(displayId)
-    
+
     packages.urllib3.disable_warnings()
     sess = Session()
     sess.mount('http://', HTTPAdapter(max_retries=3))
     sess.mount('https://', HTTPAdapter(max_retries=3))
     sess.keep_alive = False  # 关闭多余连接
     dat = post("https://api.loj.ac/api/problem/getProblem",
-         stream=True,
-         verify=False,
-         timeout=(5, 5),
-         headers={
-             "Content-Type": "application/json",
-             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
-         },
-         data=dumps({"displayId": displayId, "testData": True, "additionalFiles": True, "localizedContentsOfLocale": "zh_CN",
-                     "tagsOfLocale": "zh_CN", "judgeInfo": True,
-                     "samples": True})).json()
+               stream=True,
+               verify=False,
+               timeout=(5, 5),
+               headers={
+                   "Content-Type": "application/json",
+                   "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+               },
+               data=dumps({"displayId": displayId, "testData": True, "additionalFiles": True,
+                           "localizedContentsOfLocale": "zh_CN",
+                           "tagsOfLocale": "zh_CN", "judgeInfo": True,
+                           "samples": True})).json()
     # print(dat)
 
     try:
@@ -80,13 +87,13 @@ def downloadProblem(displayId):
                 elif i["type"] == "Sample":
                     sample_id = sample_id + 1
                     f.write("```input" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
-                    f.write("```output" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
+                    f.write(
+                        "```output" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
                     f.write(i["text"] + "\n")
                     # f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
                     # f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
             f.write("### 来源\n")
             f.write("[LOJ" + str(displayId) + "](" + "https://loj.ac/p/" + str(displayId) + ")\n")
-
 
     # get tag name
     if not os.path.exists(directory + str(displayId) + "/problem.yaml"):
@@ -155,7 +162,8 @@ def downloadProblem(displayId):
     fnlist = []
     for i in testdata:
         fnlist.append(i["filename"])
-    URList = getDataURL(fnlist, id)
+    URList = getDataURL(fnlist, id, 'TestData')
+    # print(URList)
     for i in URList:
         if not os.path.exists(directory + str(displayId) + "/testdata/" + i["filename"]):
             resp = get(i["downloadUrl"])
@@ -167,18 +175,19 @@ def downloadProblem(displayId):
                     f.write(resp.content)
             resp.close()  # 关闭连接
     # chdir("..")
-    # TODO: 3558未成功下载附加文件
-    addtional_data = dat["additionalFiles"]
-    if addtional_data:
+
+    additional_data = dat["additionalFiles"]
+    if additional_data:
         try:
             mkdir(directory + str(displayId) + "/additional_file")
         except Exception as e:
             pass
         fnlist = []
-        for i in addtional_data:
+        for i in additional_data:
             fnlist.append(i["filename"])
         # print(fnlist)
-        URList = getDataURL(fnlist, id)
+        URList = getDataURL(fnlist, id, 'AdditionalFile')
+        # print(URList)
         for i in URList:
             if not os.path.exists(directory + str(displayId) + "/additional_file/" + i["filename"]):
                 resp = get(i["downloadUrl"])
@@ -191,7 +200,6 @@ def downloadProblem(displayId):
                 resp.close()  # 关闭连接
 
     print("No." + str(displayId) + " Done..." + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
-    
 
 
 class worker(threading.Thread):
@@ -214,11 +222,14 @@ class worker(threading.Thread):
                 with open(directory + "fail.txt", "a+") as f:
                     f.write(str(displayid) + "failed." + str(e) + "\n")
             self.queue.task_done()
+            print(f'避免反爬，等待{delay_time}秒。')
+            time.sleep(delay_time)
 
 
 def getNewProblem():
     list = get("https://api.loj.ac.cn/api/homepage/getHomepage?locale=zh_CN", headers={
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
     }).json()["latestUpdatedProblems"]
     # print(list)
     for li in list:
@@ -254,10 +265,11 @@ choice = input('''请输入1或2选择下载最新题目或下载全部题目：
 print("Begin!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
 if choice == '1':
     # nowTime = time.strftime("%H:%M", time.localtime())
-    # print(nowTime)
-    # schedule.every().day.at(nowTime).do(getNewProblem)  # 每天的4:30执行一次任务
+    nowTime = time.strftime("%H:%M", time.localtime())
+    print(nowTime)
+    schedule.every().day.at(nowTime).do(getNewProblem)  # 每天的4:30执行一次任务
     # schedule.every(10).minutes.do(job)
-    schedule.every().hour.do(getNewProblem)  # 每小时执行一次
+    # schedule.every().hour.do(getNewProblem)  # 每小时执行一次
     # schedule.every().day.at("10:30").do(job)
     # schedule.every().monday.do(job)
     # schedule.every().wednesday.at("13:15").do(job)
@@ -267,7 +279,13 @@ if choice == '1':
         time.sleep(60)
     # getNewProblem()
 elif choice == '2':
-    pass
+    b_id = int(input('请输入开始题号：'))
+    e_id = int(input('请输入结束题号：'))
+    for p_id in range(b_id, e_id + 1):
+        queue.put(p_id)
+        if threading.active_count() < 10:
+            t = worker(queue)
+            t.start()
 else:
     num = post("https://api.loj.ac/api/problem/queryProblemSet", headers={
         "Content-Type": "application/json"
@@ -276,16 +294,17 @@ else:
     try:
         for i in range(0, num, 8):
             try:
-                list = post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
-                            data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
+                list = \
+                    post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
+                         data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
             except:
                 time.sleep(5)
                 list = \
-                post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
-                     data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
+                    post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
+                         data=dumps({"locale": "zh_CN", "skipCount": i, "takeCount": 8})).json()["result"]
             for j in list:
                 nowi = j["meta"]["displayId"]
-                id = j["meta"]["id"]
+                # id = j["meta"]["id"]
                 # downloadProblem(j["meta"]["displayId"])
                 queue.put(nowi)
 
