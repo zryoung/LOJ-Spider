@@ -1,0 +1,11 @@
+# 数据未完全下载，可能不报错，如何校验？待解决
+IncompleteRead(3670016 bytes read, 1219501 more expected)
+downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: IncompleteRead(3670016 bytes read, 1219501 more expected)', IncompleteRead(3670016 bytes read, 1219501 more expected)),"file:"downloads\loj.ac\134\testdata\1.in,"url:"https://files.loj.ac/libreoj-data/6ee89ec4-6494-5763-8ea6-e68f902d317e?response-content-disposition=attachment%3B%20filename%3D%221.in%22&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=5d9c40ebc7ca054399154bcebc5c3a5c%2F20240808%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20240808T034012Z&X-Amz-Expires=72000&X-Amz-SignedHeaders=host&X-Amz-Signature=df617f68650b77bb523fa71221c91ee319a383c495b3283480ee4c691128153a
+
+# 没题的时候引发异常result.get('localizedContentsOfAllLocales') 已改，需测试
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 369, in run
+    get_problem(protocol, host, i)
+  File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 152, in get_problem
+    if not result.get('localizedContentsOfAllLocales'):
+KeyError: 'localizedContentsOfAllLocales'
