@@ -1,4 +1,9 @@
 import os
+import random
+import re
+import uuid
+from io import BytesIO
+from PIL import Image
 
 from requests import *
 from json import dumps, loads
@@ -12,7 +17,20 @@ from requests.adapters import HTTPAdapter
 
 directory = 'E:/LOJ/download/'
 delay_time = 1
+headers={
+    "Content-Type": "application/json",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+}
 
+ScoreTypeMap = {
+    'GroupMin': 'min',
+    'Sum': 'sum',
+    'GroupMul': 'max',
+}
+
+LanguageMap = {
+    'cpp': 'cc',
+}
 
 def getProblemMeta(id):
     return post("https://api.loj.ac/api/problem/getProblem",
@@ -43,6 +61,40 @@ def getDataURL(filenamelist, id, type):
                    "filenameList": filenamelist
                })).json()
     return rsp["downloadInfo"]
+
+
+def get_response(url):
+    rand_time = random.random() * delay_time
+    time.sleep(rand_time)
+    try:
+        response = get(url=url, headers=headers)
+        return response
+    except Exception as e:
+        print(f'网络读取出错：url-{url};info-{e.args}')
+    return None
+
+
+def get_and_replace_images(content, picpath):
+    img_arr = re.findall(r'!\[.*?\]\((.*?)\)', content)
+
+    if img_arr:
+        os.makedirs(picpath, exist_ok=True)
+    # print(img_arr)
+    for img_url in img_arr:
+        # print(img_url)
+        response = get_response(img_url)
+        # print(response.content)
+        if response != None and response.status_code == 200:
+            # TODO: 无法识别svg图片
+            img = Image.open(BytesIO(response.content))
+            pic_name = uuid.uuid1().hex + '.' + img.format.lower()
+            pic_file_path = os.path.join(picpath, pic_name)
+
+            with open(pic_file_path, 'wb+') as f:
+                f.write(response.content)
+
+            content = content.replace(img_url, f'file://{pic_name}?type=additional_file')
+    return content
 
 
 def downloadProblem(displayId):
@@ -79,17 +131,20 @@ def downloadProblem(displayId):
             # f.write()
             content = dat["localizedContentsOfLocale"]["contentSections"]
             sample_id = 0
-            # TODO: 题目有图片未解决
+
             for i in content:
                 f.write("## " + i["sectionTitle"] + "\n")
                 if i["type"] == 'Text':
-                    f.write(i["text"] + "\n")
+                    # print(i["text"])
+                    text = get_and_replace_images(i["text"],directory + str(displayId) + "/additional_file")
+                    f.write(text + "\n")
                 elif i["type"] == "Sample":
                     sample_id = sample_id + 1
                     f.write("```input" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
                     f.write(
                         "```output" + str(sample_id) + "\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
-                    f.write(i["text"] + "\n")
+                    text = get_and_replace_images(i["text"], directory + str(displayId) + "/additional_file")
+                    f.write(text + "\n")
                     # f.write("### Input\n```\n" + dat["samples"][i["sampleId"]]["inputData"] + "\n```\n")
                     # f.write("### Output\n```\n" + dat["samples"][i["sampleId"]]["outputData"] + "\n```\n")
             f.write("### 来源\n")
@@ -212,6 +267,8 @@ class worker(threading.Thread):
             if self.queue.empty():
                 break
             displayid = queue.get()
+            print(f'避免反爬，等待{delay_time}秒。')
+            time.sleep(delay_time)
 
             try:
                 # print("thread %s is running..." %threading.current_thread().name)
@@ -222,8 +279,7 @@ class worker(threading.Thread):
                 with open(directory + "fail.txt", "a+") as f:
                     f.write(str(displayid) + "failed." + str(e) + "\n")
             self.queue.task_done()
-            print(f'避免反爬，等待{delay_time}秒。')
-            time.sleep(delay_time)
+
 
 
 def getNewProblem():
@@ -322,4 +378,4 @@ else:
     # with open("fail.txt", "w+") as f:
     #     f.write(failList)
 
-    print("All Done!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
+print("All Done!", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time())))
