@@ -10,7 +10,7 @@ pip install requests
 
 运行：
 ```bash
-python index.py
+python loj_download.py https://loj.ac/p/1..10
 ```
 
 ## 声明
