@@ -5,7 +5,7 @@
 安装依赖：
 
 ```bash
-pip install requests
+pip install -r requirements.txt
 ```
 
 运行：
