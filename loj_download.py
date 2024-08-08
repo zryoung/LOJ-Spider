@@ -149,7 +149,7 @@ def get_problem(protocol, host, pid):
         ),
     ).json()
     # print(result)
-    if not result['localizedContentsOfAllLocales']:
+    if not result.get('localizedContentsOfAllLocales'):
         return
     
     writer = create_writer(os.path.join(host,str(pid)))
