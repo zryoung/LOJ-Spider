@@ -66,20 +66,32 @@ def resume_download(url, file_path, retry=3):
         try:
             resume_download(url,file_path)
         except Exception as e:
-            with open(os.path.join(__dirname,'fail.json')) as file:
-                yaml.dump(
-                    data={"message":e,
-                          "file": file_path,
-                          "download_url":url
-                        },
-                    stream=file,
-                    indent=2,
-                    encoding='utf-8'
-                )
-                print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
+            data={
+                "message":e,
+                "file": file_path,
+                "download_url":url
+            }
+            file_writer('fail.json', data)
+            # with open(os.path.join(__dirname,'fail.json')) as file:
+            #     yaml.dump(
+            #         data={"message":e,
+            #               "file": file_path,
+            #               "download_url":url
+            #             },
+            #         stream=file,
+            #         indent=2,
+            #         encoding='utf-8'
+            #     )
+            print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
-def create_yaml_writer(filename):
-    pass
+def file_writer(filename, content):
+    with open(os.path.join(__dirname,filename), 'w', encoding='utf-8') as file:
+        yaml.dump(
+            data=content,
+            stream=file,
+            indent=2,
+            encoding='utf-8'
+        )
 
 def create_writer(id):
     path = os.path.join(__dirname,str(id))
@@ -349,6 +361,12 @@ def get_problem(protocol, host, pid):
             thread.start()
             threads.append(thread)            
         except Exception as e:
+            file_writer('fail.json', 
+                        data={
+                            "message": e,
+                            "function": "get_problem",
+                        })
+            print(f'function:get_problem:{pid}')
             print(e)
             print('=' * 16)
             print(traceback.format_exc())
