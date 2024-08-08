@@ -63,7 +63,23 @@ def resume_download(url, file_path, retry=3):
                     sys.stdout.flush()
         print()  # 避免上面\r 回车符
     except Exception as e:
-        print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
+        try:
+            resume_download(url,file_path)
+        except Exception as e:
+            with open(os.path.join(__dirname,'fail.json')) as file:
+                yaml.dump(
+                    data={"message":e,
+                          "file": file_path,
+                          "download_url":url
+                        },
+                    stream=file,
+                    indent=2,
+                    encoding='utf-8'
+                )
+                print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
+
+def create_yaml_writer(filename):
+    pass
 
 def create_writer(id):
     path = os.path.join(__dirname,str(id))
@@ -368,6 +384,7 @@ def run(url: str):
                     try:
                         get_problem(protocol, host, i)
                     except Exception as e:
+                        print(f'Error:{i}')
                         print(e)                                    
                         print('=' * 16)
                         print(traceback.format_exc())

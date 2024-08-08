@@ -9,3 +9,48 @@ Traceback (most recent call last):
   File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 152, in get_problem
     if not result.get('localizedContentsOfAllLocales'):
 KeyError: 'localizedContentsOfAllLocales'
+
+150 testdata/config.yaml 不完整
+HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out. (read timeout=5)
+================
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 466, in _make_request
+    self._validate_conn(conn)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 1095, in _validate_conn
+    conn.connect()
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connection.py", line 652, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connection.py", line 805, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\util\ssl_.py", line 465, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls, server_hostname)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\util\ssl_.py", line 509, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+  File "C:\Python\Python310\lib\ssl.py", line 512, in wrap_socket
+    return self.sslsocket_class._create(
+  File "C:\Python\Python310\lib\ssl.py", line 1070, in _create
+    self.do_handshake()
+  File "C:\Python\Python310\lib\ssl.py", line 1341, in do_handshake
+    self._sslobj.do_handshake()
+TimeoutError: _ssl.c:980: The handshake operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\adapters.py", line 667, in send
+    resp = conn.urlopen(
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 843, in urlopen
+    retries = retries.increment(
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\util\retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\util\util.py", line 39, in reraise
+    raise value
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 789, in urlopen
+    response = self._make_request(
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 490, in _make_request
+    raise new_e
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 468, in _make_request
+    self._raise_timeout(err=e, url=url, timeout_value=conn.timeout)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\connectionpool.py", line 369, in _raise_timeout
+    raise ReadTimeoutError(
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out. (read timeout=5)
