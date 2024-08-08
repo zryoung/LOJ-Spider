@@ -2,6 +2,7 @@
 
 import asyncio
 from io import BytesIO
+import random
 import os, re, requests, sys, yaml
 import time
 import threading
@@ -397,6 +398,7 @@ def run(url: str):
         for i in range(start, end + 1):
             if version == 3:
                 try:
+                    time.sleep(random.random()*5)
                     get_problem(protocol, host, i)
                 except Exception as e:
                     try:
