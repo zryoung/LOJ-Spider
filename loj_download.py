@@ -1,7 +1,6 @@
 ## loj-download的python版
 
-import asyncio
-from io import BytesIO
+
 import random
 import os, re, requests, sys, yaml
 import time
@@ -9,7 +8,6 @@ import threading
 from json import dumps
 from requests import packages
 from urllib.parse import urlparse
-from collections import OrderedDict
 import traceback
 from tenacity import retry, stop_after_attempt, stop_after_delay, wait_exponential
 
