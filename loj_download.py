@@ -26,6 +26,8 @@ LanguageMap = {
     "cpp": "cc",
 }
 
+
+@retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=2, max=60),reraise=True)
 def resume_download(url, file_path, retry=3):
     try:
         # 第一次请求是为了得到文件总大小
@@ -63,29 +65,16 @@ def resume_download(url, file_path, retry=3):
                     sys.stdout.flush()
         print()  # 避免上面\r 回车符
     except Exception as e:
-        try:
-            resume_download(url,file_path)
-        except Exception as e:
-            data={
-                "message":e,
-                "file": file_path,
-                "download_url":url
-            }
-            file_writer('fail.json', data)
-            # with open(os.path.join(__dirname,'fail.json')) as file:
-            #     yaml.dump(
-            #         data={"message":e,
-            #               "file": file_path,
-            #               "download_url":url
-            #             },
-            #         stream=file,
-            #         indent=2,
-            #         encoding='utf-8'
-            #     )
-            print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
+        data={
+            "message":e,
+            "file": file_path,
+            "download_url":url
+        }
+        file_writer('fail.json', data)
+        print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
 def file_writer(filename, content):
-    with open(os.path.join(__dirname,filename), 'w', encoding='utf-8') as file:
+    with open(os.path.join(__dirname,filename), 'a', encoding='utf-8') as file:
         yaml.dump(
             data=content,
             stream=file,
@@ -155,6 +144,7 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 
 @retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=2, max=60),reraise=True)
 def get_problem(protocol, host, pid):
+    # print('test')
     try:
         url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
         result = requests.post(
@@ -179,7 +169,7 @@ def get_problem(protocol, host, pid):
                 }
             ),
         ).json()
-        # print(result)
+        
         if not result.get('localizedContentsOfAllLocales'):
             return f'{pid}没有该题'
         
@@ -355,10 +345,12 @@ def get_problem(protocol, host, pid):
             tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
         # print(tasks)
 
+        
         # 多线程下载
         threads = []
         for name, type, url, expected_size in tasks:
             try:
+                
                 filepath = os.path.join(__dirname,host,str(pid),type,name)
                 # print(filepath)
                 # resume_download(url, file_path=filepath)
