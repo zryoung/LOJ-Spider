@@ -226,7 +226,7 @@ def get_problem(protocol, host, pid):
     title = [
         *filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])
     ][0]['title']
-    writer('problem.yaml', yaml.dump({
+    writer('problem.yaml', ordered_yaml_dump({
         "title": title,
         "owner": 1,
         "tag": tags, 
