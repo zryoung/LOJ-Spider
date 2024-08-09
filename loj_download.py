@@ -179,7 +179,7 @@ def get_problem(protocol, host, pid):
     ).json()
     # print(result)
     if not result.get('localizedContentsOfAllLocales'):
-        return
+        return f'{pid}没有该题'
     
     writer = create_writer(os.path.join(host,str(pid)))
     for c in result['localizedContentsOfAllLocales']:
@@ -373,7 +373,7 @@ def get_problem(protocol, host, pid):
             print(traceback.format_exc())
     for thread in threads:
         thread.join()
-    print(f'{pid}下载完成')
+    return f'{pid}下载完成'
    
 
 def run(url: str):
@@ -399,10 +399,12 @@ def run(url: str):
             if version == 3:
                 try:
                     time.sleep(random.random()*5)
-                    get_problem(protocol, host, i)
+                    message = get_problem(protocol, host, i)
+                    print(message)
                 except Exception as e:
                     try:
-                        get_problem(protocol, host, i)
+                        message = get_problem(protocol, host, i)
+                        print(message)
                     except Exception as e:
                         print(f'Error:{i}')
                         print(e)                                    
