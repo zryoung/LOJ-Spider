@@ -15,7 +15,7 @@ packages.urllib3.disable_warnings()  # 去除警告信息
 
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
-__dirname = f"..\downloads"  # 下载目录放到项目目录的父目录
+__dirname = fr"..\downloads"  # 下载目录放到项目目录的父目录
 
 ScoreTypeMap = {
     "GroupMin": "min",
@@ -46,7 +46,7 @@ def resume_download(url, file_path, retry=3):
             return
         # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
         headers = {"Range": f"bytes={temp_size}-"}
-        res = requests.get(url, stream=True, headers=headers)
+        res = requests.get(url, stream=True, headers=headers,timeout=(6.1,21.1))
 
         with open(file_path, "ab") as file:
             for chunk in res.iter_content(chunk_size=1024):
