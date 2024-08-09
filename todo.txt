@@ -12,7 +12,9 @@ Traceback (most recent call last):
     if not result.get('localizedContentsOfAllLocales'):
 KeyError: 'localizedContentsOfAllLocales'
 
-150 testdata/config.yaml 不完整
+150 testdata/config.yaml 不完整，已解决，主要是subtasks未获取 
+
+
 HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out. (read timeout=5)
 ================
 Traceback (most recent call last):
