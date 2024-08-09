@@ -1,6 +1,7 @@
 ## loj-download的python版
 
 
+import json
 import random
 import os, re, requests, sys, yaml
 import time
@@ -9,7 +10,7 @@ from json import dumps
 from requests import packages
 from urllib.parse import urlparse
 import traceback
-from tenacity import retry, stop_after_attempt, stop_after_delay, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_random
 
 packages.urllib3.disable_warnings()  # 去除警告信息
 
@@ -27,7 +28,7 @@ LanguageMap = {
 }
 
 
-@retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=2, max=60),reraise=True)
+@retry(stop=stop_after_attempt(5), wait=wait_random(1, 3), reraise=True)
 def resume_download(url, file_path, retry=3):
     try:
         # 第一次请求是为了得到文件总大小
@@ -64,13 +65,15 @@ def resume_download(url, file_path, retry=3):
                     )
                     sys.stdout.flush()
         print()  # 避免上面\r 回车符
+        print(f'{file_path}下载完成')
     except Exception as e:
         data={
-            "message":e,
+            "message":str(e),
             "file": file_path,
             "download_url":url
         }
-        file_writer('fail.json', data)
+        file_writer('fail.json', json.dumps(data, ensure_ascii=False))
+        print(f'{file_path}出错重试')
         # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
 def file_writer(filename, content):
@@ -142,7 +145,7 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
     OrderedDumper.add_representer(dict, _dict_representer)
     return yaml.dump(data, stream, OrderedDumper, **kwds)
 
-@retry(stop=stop_after_attempt(5),wait=wait_exponential(multiplier=1, min=2, max=60),reraise=True)
+@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
     # print('test')
     try:

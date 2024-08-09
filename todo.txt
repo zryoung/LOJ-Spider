@@ -12,6 +12,8 @@ Traceback (most recent call last):
     if not result.get('localizedContentsOfAllLocales'):
 KeyError: 'localizedContentsOfAllLocales'
 
+出错重试的次数未执行
+
 150 testdata/config.yaml 不完整，已解决，主要是subtasks未获取 
 
 
