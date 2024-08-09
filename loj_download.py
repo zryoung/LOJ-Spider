@@ -15,7 +15,7 @@ packages.urllib3.disable_warnings()  # 去除警告信息
 
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
-__dirname = "..\downloads"  # 下载目录放到项目目录的父目录
+__dirname = f"..\downloads"  # 下载目录放到项目目录的父目录
 
 ScoreTypeMap = {
     "GroupMin": "min",
