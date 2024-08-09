@@ -71,7 +71,7 @@ def resume_download(url, file_path, retry=3):
             "download_url":url
         }
         file_writer('fail.json', data)
-        print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
+        # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
 def file_writer(filename, content):
     with open(os.path.join(__dirname,filename), 'a', encoding='utf-8') as file:
