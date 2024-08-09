@@ -173,6 +173,7 @@ def get_problem(protocol, host, pid):
                 "localizedContentsOfAllLocales": True,
                 "tagsOfLocale": "zh_CN",
                 "judgeInfo": True,
+                "judgeInfoToBePreprocessed": True, # 获取subtasks需要这个开关
                 "samples": True,
             }
         ),
@@ -263,6 +264,7 @@ def get_problem(protocol, host, pid):
                 config["checker"] = judge["checker"]["filename"]
         if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
             config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
+        # print(result)
         # print(judge.get("subtasks"))
         if judge.get("subtasks"):
             config["subtasks"] = []
@@ -282,6 +284,7 @@ def get_problem(protocol, host, pid):
                 if subtask.get("dependencies"):
                     current["if"] = subtask["dependencies"]
                 config["subtasks"].append(current)
+        # print(config)
         # writer('testdata/config.yaml', yaml.dump(config))
         writer('testdata/config.yaml', ordered_yaml_dump(config))
 
