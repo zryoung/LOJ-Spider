@@ -3,7 +3,7 @@
 
 import json
 import random
-import os, re, requests, sys, yaml
+import os, re, requests, sys, yaml, time
 import time
 import threading
 from json import dumps
@@ -35,7 +35,7 @@ def resume_download(url, file_path, retry=3):
         r1 = requests.get(url, stream=True, verify=False)
         # 有些文件没有conteng-length这个信息
         if not r1.headers.get("Content-Length"):
-            print('hi')
+            # print('hi')
             with open(file_path, 'ab') as file:
                 file.write(r1.content)
 
@@ -76,12 +76,13 @@ def resume_download(url, file_path, retry=3):
         print()  # 避免上面\r 回车符
         # print(f'{file_path}下载完成')
     except Exception as e:
-        data={
-            "message":str(e),
-            "file": file_path,
-            "download_url":url
-        }
-        file_writer('fail.json', json.dumps(data, ensure_ascii=False))
+        # data={
+        #     "time": time.localtime(),
+        #     "message":str(e),
+        #     "file": file_path,
+        #     "download_url":url
+        # }
+        # file_writer('fail.json', json.dumps(data, ensure_ascii=False))
         raise Exception(f'{file_path}出错重试.{e}')
         # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
@@ -149,230 +150,231 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
     # print('test')
-    try:
-        url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
-        result = requests.post(
-            url,
-            stream=True,
-            verify=False,
-            timeout=(5, 5),
-            headers={
-                "Content-Type": "application/json",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-            },
-            data=dumps(
-                {
-                    "displayId": pid,
-                    "testData": True,
-                    "additionalFiles": True,
-                    "localizedContentsOfAllLocales": True,
-                    "tagsOfLocale": "zh_CN",
-                    "judgeInfo": True,
-                    "judgeInfoToBePreprocessed": True, # 获取subtasks需要这个开关
-                    "samples": True,
-                }
-            ),
-        ).json()
-        
-        if not result.get('localizedContentsOfAllLocales'):
-            return f'{pid}没有该题'
-        
-        writer = create_writer(os.path.join(host,str(pid)))
-        for c in result['localizedContentsOfAllLocales']:
-            content = ''
-            sections = c['contentSections']
-            add = False
-            sample_title = False
-
-            for section in sections:
-                if section['type'] == 'Sample':
-                    if not sample_title:
-                        content += f'\n## 样例\n\n'
-                        sample_title = True
-                    if section['sampleId'] == 0:
-                        add = True
-                    content += f'''
-    ```input{section['sampleId']+1 if add else section['sampleId']}
-    {result['samples'][section['sampleId']]['inputData']}
-    ```
-
-    ```output{section['sampleId']+1 if add else section['sampleId']}
-    {result['samples'][section['sampleId']]['outputData']}
-    ```
-                    '''
-                else:
-                    content += f'\n## {section["sectionTitle"]}\n'
-                    # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
-                    
-                    pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
-                    # print(pic_path)
-                    new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
-                    content += f'\n{new_content}\n\n'
-            
-            locale = c['locale']
-            if locale == 'en_US':
-                locale = 'en'
-            elif locale == 'zh_CN':
-                locale = 'zh'
-            writer(f'problem_{locale}.md', content=content)
-        
-        tags = [ node['name'] for node in result['tagsOfLocale'] ]
-        
-        title = [
-            *filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])
-        ][0]['title']
-        writer('problem.yaml', ordered_yaml_dump({
-            "title": title,
-            "owner": 1,
-            "tag": tags, 
-            # "pid": f"P{pid}",
-            # "nSubmit": result["meta"]["submissionCount"],
-            # "nAccept": result["meta"]["acceptedSubmissionCount"],
+    # try:
+    url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
+    result = requests.post(
+        url,
+        stream=True,
+        verify=False,
+        timeout=(5, 5),
+        headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
         },
-        allow_unicode=True,
-        ))
-
-        judge = result['judgeInfo']
-        # print(judge)
-        rename = dict()
-        if judge:
-            # config = OrderedDict({
-            #     "time": f'{judge["timeLimit"]}ms',
-            #     "memory": f'{judge["memoryLimit"]}m'
-            # })
-            config = {
-                "time": f'{judge["timeLimit"]}ms',
-                "memory": f'{judge["memoryLimit"]}m'
+        data=dumps(
+            {
+                "displayId": pid,
+                "testData": True,
+                "additionalFiles": True,
+                "localizedContentsOfAllLocales": True,
+                "tagsOfLocale": "zh_CN",
+                "judgeInfo": True,
+                "judgeInfoToBePreprocessed": True, # 获取subtasks需要这个开关
+                "samples": True,
             }
-            if judge.get("extraSourceFiles"):
-                files = []
-                for key in judge["extraSourceFiles"]:
-                    for file in judge["extraSourceFiles"][key]:
-                        files.append(file)
-                config["user_extra_files"] = files
-            if judge.get("checker") and judge["checker"]["type"] == "custom":
-                config["checker_type"] = "syzoj" if judge["checker"].get("interface") == "legacy" else judge["checker"]["interface"]
-                if LanguageMap[judge["checker"]["language"]]:
-                    rename[judge["checker"]["filename"]] = f"chk.{LanguageMap[judge['checker']['language']]}"
-                    config["checker"] = f"chk.{LanguageMap[judge['checker']['language']]}"
-                else:
-                    config["checker"] = judge["checker"]["filename"]
-            if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
-                config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
-            # print(result)
-            # print(judge.get("subtasks"))
-            if judge.get("subtasks"):
-                config["subtasks"] = []
-                for subtask in judge["subtasks"]:
-                    # current = OrderedDict()
-                    current = dict()
-                    if subtask.get("points"):
-                        current["score"] = subtask["points"]
-                    current["type"] = ScoreTypeMap[subtask["scoringType"]]
-                    current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
-                    # print(current["cases"])
-                    # current = {
-                    #     "score": subtask["points"],
-                    #     "type": ScoreTypeMap[subtask["scoringType"]],
-                    #     "cases": [{"input": inputFile, "output": outputFile} for inputFile, outputFile in subtask["testcases"]],
-                    # }
-                    if subtask.get("dependencies"):
-                        current["if"] = subtask["dependencies"]
-                    config["subtasks"].append(current)
-            # print(config)
-            # writer('testdata/config.yaml', yaml.dump(config))
-            writer('testdata/config.yaml', ordered_yaml_dump(config))
+        ),
+    ).json()
+    
+    if not result.get('localizedContentsOfAllLocales'):
+        return f'{pid}没有该题'
+    
+    writer = create_writer(os.path.join(host,str(pid)))
+    for c in result['localizedContentsOfAllLocales']:
+        content = ''
+        sections = c['contentSections']
+        add = False
+        sample_title = False
 
-        url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
-        # testData
-        data = dumps(
-                {
-                "problemId": result["meta"]["id"],
-                "type": "TestData",
-                "filenameList": [node["filename"] for node in result["testData"]],
-                }
-            )
-        # print(data)
-        # requests.adapters.DEFAULT_RETRIES = 5
-        r = requests.post(
-            url,
-            stream=True,
-            verify=False,
-            timeout=(5, 5),
-            headers={
-                "Content-Type": "application/json",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-            },
-            data=data,
-        )
+        for section in sections:
+            if section['type'] == 'Sample':
+                if not sample_title:
+                    content += f'\n## 样例\n\n'
+                    sample_title = True
+                if section['sampleId'] == 0:
+                    add = True
+                content += f'''
+```input{section['sampleId']+1 if add else section['sampleId']}
+{result['samples'][section['sampleId']]['inputData']}
+```
 
-        tasks = []  # 数据下载任务
-        for f in r.json()["downloadInfo"]:
-            if rename.get(f['filename']):
-                filename = rename[f['filename']]
+```output{section['sampleId']+1 if add else section['sampleId']}
+{result['samples'][section['sampleId']]['outputData']}
+```
+                '''
             else:
-                filename = f['filename']
-            size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
-            # print(size)
-            tasks.append([ filename , 'testdata', f['downloadUrl'], size])
-
-        # additionalFiles
-        data = dumps(
-                {
-                "problemId": result["meta"]["id"],
-                "type": "AdditionalFile",
-                "filenameList": [node["filename"] for node in result["additionalFiles"]],
-                }
-            )    
-        # requests.adapters.DEFAULT_RETRIES = 5
-        r = requests.post(
-            url,
-            stream=True,
-            verify=False,
-            timeout=(5, 5),
-            headers={
-                "Content-Type": "application/json",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-            },
-            data=data,
-        )
-        # tasks = []
-        for f in r.json()["downloadInfo"]:
-            if rename.get(f['filename']):
-                filename = rename[f['filename']]
-            else:
-                filename = f['filename']
-            size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
-            # print(size)
-            tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-        # print(tasks)
-
-        
-        # 多线程下载
-        threads = []
-        for name, type, url, expected_size in tasks:
-            try:
+                content += f'\n## {section["sectionTitle"]}\n'
+                # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
                 
-                filepath = os.path.join(__dirname,host,str(pid),type,name)
+                pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
+                # print(pic_path)
+                new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
+                content += f'\n{new_content}\n\n'
+        
+        locale = c['locale']
+        if locale == 'en_US':
+            locale = 'en'
+        elif locale == 'zh_CN':
+            locale = 'zh'
+        writer(f'problem_{locale}.md', content=content)
+    
+    tags = [ node['name'] for node in result['tagsOfLocale'] ]
+    
+    title = [
+        *filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])
+    ][0]['title']
+    writer('problem.yaml', ordered_yaml_dump({
+        "title": title,
+        "owner": 1,
+        "tag": tags, 
+        # "pid": f"P{pid}",
+        # "nSubmit": result["meta"]["submissionCount"],
+        # "nAccept": result["meta"]["acceptedSubmissionCount"],
+    },
+    allow_unicode=True,
+    ))
 
-                thread = threading.Thread(target=resume_download, args=(url, filepath))
-                thread.start()
-                threads.append(thread)            
-            except Exception as e:
-                file_writer('fail.json', 
-                            data={
-                                "message": e,
-                                "function": "get_problem",
-                            })
-                print(f'function:get_problem:{pid}')
-                print(e)
-                print('=' * 16)
-                print(traceback.format_exc())
-        for thread in threads:
-            thread.join()
-        return f'{pid}下载完成'
-    except Exception as e:
-        print(f'\n出错重试：{pid}-{e}')
+    judge = result['judgeInfo']
+    # print(judge)
+    rename = dict()
+    if judge:
+        # config = OrderedDict({
+        #     "time": f'{judge["timeLimit"]}ms',
+        #     "memory": f'{judge["memoryLimit"]}m'
+        # })
+        config = {
+            "time": f'{judge["timeLimit"]}ms',
+            "memory": f'{judge["memoryLimit"]}m'
+        }
+        if judge.get("extraSourceFiles"):
+            files = []
+            for key in judge["extraSourceFiles"]:
+                for file in judge["extraSourceFiles"][key]:
+                    files.append(file)
+            config["user_extra_files"] = files
+        if judge.get("checker") and judge["checker"]["type"] == "custom":
+            config["checker_type"] = "syzoj" if judge["checker"].get("interface") == "legacy" else judge["checker"]["interface"]
+            if LanguageMap[judge["checker"]["language"]]:
+                rename[judge["checker"]["filename"]] = f"chk.{LanguageMap[judge['checker']['language']]}"
+                config["checker"] = f"chk.{LanguageMap[judge['checker']['language']]}"
+            else:
+                config["checker"] = judge["checker"]["filename"]
+        if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
+            config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
+        # print(result)
+        # print(judge.get("subtasks"))
+        if judge.get("subtasks"):
+            config["subtasks"] = []
+            for subtask in judge["subtasks"]:
+                # current = OrderedDict()
+                current = dict()
+                if subtask.get("points"):
+                    current["score"] = subtask["points"]
+                current["type"] = ScoreTypeMap[subtask["scoringType"]]
+                current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
+                # print(current["cases"])
+                # current = {
+                #     "score": subtask["points"],
+                #     "type": ScoreTypeMap[subtask["scoringType"]],
+                #     "cases": [{"input": inputFile, "output": outputFile} for inputFile, outputFile in subtask["testcases"]],
+                # }
+                if subtask.get("dependencies"):
+                    current["if"] = subtask["dependencies"]
+                config["subtasks"].append(current)
+        # print(config)
+        # writer('testdata/config.yaml', yaml.dump(config))
+        writer('testdata/config.yaml', ordered_yaml_dump(config))
+
+    url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
+    # testData
+    data = dumps(
+            {
+            "problemId": result["meta"]["id"],
+            "type": "TestData",
+            "filenameList": [node["filename"] for node in result["testData"]],
+            }
+        )
+    # print(data)
+    # requests.adapters.DEFAULT_RETRIES = 5
+    r = requests.post(
+        url,
+        stream=True,
+        verify=False,
+        timeout=(5, 5),
+        headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+        },
+        data=data,
+    )
+
+    tasks = []  # 数据下载任务
+    for f in r.json()["downloadInfo"]:
+        if rename.get(f['filename']):
+            filename = rename[f['filename']]
+        else:
+            filename = f['filename']
+        size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
+        # print(size)
+        tasks.append([ filename , 'testdata', f['downloadUrl'], size])
+
+    # additionalFiles
+    data = dumps(
+            {
+            "problemId": result["meta"]["id"],
+            "type": "AdditionalFile",
+            "filenameList": [node["filename"] for node in result["additionalFiles"]],
+            }
+        )    
+    # requests.adapters.DEFAULT_RETRIES = 5
+    r = requests.post(
+        url,
+        stream=True,
+        verify=False,
+        timeout=(5, 5),
+        headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+        },
+        data=data,
+    )
+    # tasks = []
+    for f in r.json()["downloadInfo"]:
+        if rename.get(f['filename']):
+            filename = rename[f['filename']]
+        else:
+            filename = f['filename']
+        size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
+        # print(size)
+        tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
+    # print(tasks)
+
+    
+    # 多线程下载
+    threads = []
+    for name, type, url, expected_size in tasks:
+        try:
+            
+            filepath = os.path.join(__dirname,host,str(pid),type,name)
+
+            thread = threading.Thread(target=resume_download, args=(url, filepath))
+            thread.start()
+            threads.append(thread)            
+        except Exception as e:
+            raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
+            # file_writer('fail.json', 
+            #             data={
+            #                 "message": e,
+            #                 "function": "get_problem",
+            #             })
+            # print(f'function:get_problem:{pid}')
+            # print(e)
+            # print('=' * 16)
+            # print(traceback.format_exc())
+    for thread in threads:
+        thread.join()
+    return f'{pid}下载完成'
+    # except Exception as e:
+    #     print(f'\n出错重试：{pid}-{e}')
    
 
 def run(url: str):
@@ -401,14 +403,17 @@ def run(url: str):
                     message = get_problem(protocol, host, i)
                     print(message)
                 except Exception as e:
-                    try:
-                        message = get_problem(protocol, host, i)
-                        print(message)
-                    except Exception as e:
-                        print(f'Error:{i}')
-                        print(e)                                    
-                        print('=' * 16)
-                        print(traceback.format_exc())
+                    print(f'{i}出错，出错原因：{e}')
+                    print('=' * 64)
+                    print(traceback.format_exc())
+                    # try:
+                    #     message = get_problem(protocol, host, i)
+                    #     print(message)
+                    # except Exception as e:
+                    #     print(f'Error:{i}')
+                    #     print(e)                                    
+                    #     print('=' * 16)
+                    #     print(traceback.format_exc())
             # else:
             #     await v2(f"{prefix}{i}/")
         return
