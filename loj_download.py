@@ -74,7 +74,7 @@ def resume_download(url, file_path, retry=3):
                     )
                     sys.stdout.flush()
         print()  # 避免上面\r 回车符
-        print(f'{file_path}下载完成')
+        # print(f'{file_path}下载完成')
     except Exception as e:
         data={
             "message":str(e),
@@ -82,7 +82,7 @@ def resume_download(url, file_path, retry=3):
             "download_url":url
         }
         file_writer('fail.json', json.dumps(data, ensure_ascii=False))
-        print(f'{file_path}出错重试')
+        raise Exception(f'{file_path}出错重试.{e}')
         # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
 def file_writer(filename, content):
@@ -126,20 +126,12 @@ def get_and_replace_images(content, picpath):
     for img_url in img_arr:
         filename, extension = get_filename_and_extension(url=img_url)
         pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
-        resume_download(url=img_url, file_path=pic_file_path)
+        try:
+            resume_download(url=img_url, file_path=pic_file_path)
+        except Exception as e:
+            print(f'图片下载出错：{img_url},错误信息：{e}')
         content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
-        # print(img_url)
-        # response = get_response(img_url)
-        # # print(response.content)
-        # if response != None and response.status_code == 200:
-        #     # TODO: 无法识别svg图片
-        #     img = Image.open(BytesIO(response.content))
-        #     pic_name = uuid.uuid1().hex + '.' + img.format.lower()
-        #     pic_file_path = os.path.join(picpath, pic_name)
-            # with open(pic_file_path, 'wb+') as f:
-            #     f.write(response.content)
 
-            # content = content.replace(img_url, f'file://{pic_name}?type=additional_file')
     return content
 
 def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
@@ -313,9 +305,7 @@ def get_problem(protocol, host, pid):
             },
             data=data,
         )
-        # print(r.json())
-        # if r.status_code != 200:
-        #     raise Exception(f"Error: {r.status_code}")
+
         tasks = []  # 数据下载任务
         for f in r.json()["downloadInfo"]:
             if rename.get(f['filename']):
@@ -364,8 +354,7 @@ def get_problem(protocol, host, pid):
             try:
                 
                 filepath = os.path.join(__dirname,host,str(pid),type,name)
-                # print(filepath)
-                # resume_download(url, file_path=filepath)
+
                 thread = threading.Thread(target=resume_download, args=(url, filepath))
                 thread.start()
                 threads.append(thread)            
