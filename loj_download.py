@@ -374,7 +374,7 @@ def get_problem(protocol, host, pid):
             thread.join()
         return f'{pid}下载完成'
     except Exception as e:
-        print(f'出错重试：{pid}-{e}')
+        print(f'\n出错重试：{pid}-{e}')
    
 
 def run(url: str):
