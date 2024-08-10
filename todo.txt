@@ -4,7 +4,7 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 解决思路：
 获取需要下载的信息保存在本地download_info.json，下载每题前先检测是否有该文件，文件中记录有哪些文件未完整下载
 
-# 没题的时候引发异常result.get('localizedContentsOfAllLocales') 已改，需测试
+OK # 没题的时候引发异常result.get('localizedContentsOfAllLocales') 已改，需测试
 Traceback (most recent call last):
   File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 369, in run
     get_problem(protocol, host, i)
@@ -12,11 +12,11 @@ Traceback (most recent call last):
     if not result.get('localizedContentsOfAllLocales'):
 KeyError: 'localizedContentsOfAllLocales'
 
-出错重试的次数未执行
+OK 出错重试的次数未执行(而抛出异常才能起作用，即raise exception(...))
 
-150 testdata/config.yaml 不完整，已解决，主要是subtasks未获取 
+OK 150 testdata/config.yaml 不完整，已解决，主要是subtasks未获取 
 
-
+OK 有些文件下载没有headers['content-length'],造成无法下载
 HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out. (read timeout=5)
 ================
 Traceback (most recent call last):
