@@ -33,6 +33,15 @@ def resume_download(url, file_path, retry=3):
     try:
         # 第一次请求是为了得到文件总大小
         r1 = requests.get(url, stream=True, verify=False)
+        # 有些文件没有conteng-length这个信息
+        if not r1.headers.get("Content-Length"):
+            print('hi')
+            with open(file_path, 'ab') as file:
+                file.write(r1.content)
+
+            # print(f'{file_path}下载完成')
+            return
+        
         total_size = int(r1.headers["Content-Length"])
 
         # 这重要了，先看看本地文件下载了多少
