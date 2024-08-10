@@ -241,10 +241,20 @@ def get_problem(protocol, host, pid):
         #     "time": f'{judge["timeLimit"]}ms',
         #     "memory": f'{judge["memoryLimit"]}m'
         # })
-        config = {
-            "time": f'{judge["timeLimit"]}ms',
-            "memory": f'{judge["memoryLimit"]}m'
-        }
+        # config = {
+        #     "time": f'{judge.get("timeLimit", 1000)}ms',
+        #     "memory": f'{judge.get("memoryLimit", 256)}m'
+        # }
+        config = dict()
+        if judge.get("timeLimit"):
+            config["time"] = f'{judge["timeLimit"]}ms'
+        elif judge.get("checker").get("timeLimit"):
+            config["time"] = f'{judge["checker"]["timeLimit"]}ms'
+        if judge.get("memoryLimit"):
+            config["memory"] = f'{judge["memoryLimit"]}ms'
+        elif judge.get("checker").get("memoryLimit"):
+            config["memory"] = f'{judge["checker"]["memoryLimit"]}ms'
+
         if judge.get("extraSourceFiles"):
             files = []
             for key in judge["extraSourceFiles"]:
