@@ -280,7 +280,17 @@ def get_problem(protocol, host, pid):
                 if subtask.get("points"):
                     current["score"] = subtask["points"]
                 current["type"] = ScoreTypeMap[subtask["scoringType"]]
-                current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
+                # TODO:559,交互题，没有output,出错
+                # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
+                current["cases"] = []
+                current_case = dict()
+                for item in subtask.get("testcases", []):
+                    if "inputFile" in item:
+                        current_case["input"] = item["inputFile"]
+                    if "outputFile" in item:
+                        current_case["output"] = item["outputFile"]
+                    current["cases"].append(current_case)
+                # current["cases"] = []
                 # print(current["cases"])
                 # current = {
                 #     "score": subtask["points"],
