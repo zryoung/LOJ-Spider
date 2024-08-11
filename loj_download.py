@@ -251,9 +251,9 @@ def get_problem(protocol, host, pid):
         elif judge.get("checker").get("timeLimit"):
             config["time"] = f'{judge["checker"]["timeLimit"]}ms'
         if judge.get("memoryLimit"):
-            config["memory"] = f'{judge["memoryLimit"]}ms'
+            config["memory"] = f'{judge["memoryLimit"]}m'
         elif judge.get("checker").get("memoryLimit"):
-            config["memory"] = f'{judge["checker"]["memoryLimit"]}ms'
+            config["memory"] = f'{judge["checker"]["memoryLimit"]}m'
 
         if judge.get("extraSourceFiles"):
             files = []
