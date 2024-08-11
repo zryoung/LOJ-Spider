@@ -283,25 +283,16 @@ def get_problem(protocol, host, pid):
                 # TODO:559,交互题，没有output,出错
                 # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
                 current["cases"] = []
-                current_case = dict()
+                current_case = []
                 for item in subtask.get("testcases", []):
                     if "inputFile" in item:
-                        current_case["input"] = item["inputFile"]
+                        current["cases"].append({"input": item["inputFile"]})
                     if "outputFile" in item:
-                        current_case["output"] = item["outputFile"]
-                    current["cases"].append(current_case)
-                # current["cases"] = []
-                # print(current["cases"])
-                # current = {
-                #     "score": subtask["points"],
-                #     "type": ScoreTypeMap[subtask["scoringType"]],
-                #     "cases": [{"input": inputFile, "output": outputFile} for inputFile, outputFile in subtask["testcases"]],
-                # }
+                        current["cases"].append({"output": item["outputFile"]})
+                
                 if subtask.get("dependencies"):
                     current["if"] = subtask["dependencies"]
                 config["subtasks"].append(current)
-        # print(config)
-        # writer('testdata/config.yaml', yaml.dump(config))
         writer('testdata/config.yaml', ordered_yaml_dump(config))
 
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
