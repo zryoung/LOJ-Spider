@@ -26,7 +26,7 @@ def get_pid_list(url):
     takeCount = 50
     pid_list = []
     try:
-        for skipCount in range(200, num, takeCount):            
+        for skipCount in range(257, num, takeCount):            
             try:
                 result = \
                     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
