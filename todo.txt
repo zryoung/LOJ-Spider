@@ -8,6 +8,76 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 # 513，514提交答案题目，judgeinfo里没有timelimit信息，导致异常
 
 
+2089 超时？
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 748, in _error_catcher
+    yield
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 873, in _raw_read
+    data = self._fp_read(amt, read1=read1) if not fp_closed else b""
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 856, in _fp_read
+    return self._fp.read(amt) if amt is not None else self._fp.read()
+  File "C:\Python\Python310\lib\http\client.py", line 464, in read
+    s = self.fp.read(amt)
+  File "C:\Python\Python310\lib\socket.py", line 705, in readinto
+    return self._sock.recv_into(b)
+  File "C:\Python\Python310\lib\ssl.py", line 1273, in recv_into
+    return self.read(nbytes, buffer)
+  File "C:\Python\Python310\lib\ssl.py", line 1129, in read
+    return self._sslobj.read(len, buffer)
+TimeoutError: The read operation timed out
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\models.py", line 820, in generate
+    yield from self.raw.stream(chunk_size, decode_content=True)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 1060, in stream
+    data = self.read(amt=amt, decode_content=decode_content)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 949, in read
+    data = self._raw_read(amt)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 872, in _raw_read
+    with self._error_catcher():
+  File "C:\Python\Python310\lib\contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\urllib3\response.py", line 753, in _error_catcher
+    raise ReadTimeoutError(self._pool, None, "Read timed out.") from e  # type: ignore[arg-type]
+urllib3.exceptions.ReadTimeoutError: HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\爬虫集合\LOJ-Spider\get_by_schedule.py", line 58, in wrapper
+    return job_func(*args, **kwargs)
+  File "E:\爬虫集合\LOJ-Spider\get_by_schedule.py", line 72, in get_problem_from_list
+    message = get_problem('https', 'loj.ac', pid)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 336, in wrapped_f
+    return copy(f, *args, **kw)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 475, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 376, in iter
+    result = action(retry_state)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 418, in exc_check
+    raise retry_exc.reraise()
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 185, in reraise
+    raise self.last_attempt.result()
+  File "C:\Python\Python310\lib\concurrent\futures\_base.py", line 438, in result
+    return self.__get_result()
+  File "C:\Python\Python310\lib\concurrent\futures\_base.py", line 390, in __get_result
+    raise self._exception
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\tenacity\__init__.py", line 478, in __call__
+    result = fn(*args, **kwargs)
+  File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 176, in get_problem
+    ).json()
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\models.py", line 974, in json
+    return complexjson.loads(self.text, **kwargs)
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\models.py", line 926, in text
+    if not self.content:
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\models.py", line 902, in content
+    self._content = b"".join(self.iter_content(CONTENT_CHUNK_SIZE)) or b""
+  File "E:\爬虫集合\LOJ-Spider\venv\lib\site-packages\requests\models.py", line 826, in generate
+    raise ConnectionError(e)
+requests.exceptions.ConnectionError: HTTPSConnectionPool(host='api.loj.ac', port=443): Read timed out.
+
 OK # 没题的时候引发异常result.get('localizedContentsOfAllLocales') 已改，需测试
 Traceback (most recent call last):
   File "E:\爬虫集合\LOJ-Spider\loj_download.py", line 369, in run
