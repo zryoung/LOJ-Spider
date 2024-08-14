@@ -70,7 +70,7 @@ def resume_download(url, file_path, retry=3):
                     ###这是下载实现进度显示####
                     done = int(50 * temp_size / total_size)
                     sys.stdout.write(
-                        f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size)}% {file_path} "
+                        f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
                     )
                     sys.stdout.flush()
         print()  # 避免上面\r 回车符
