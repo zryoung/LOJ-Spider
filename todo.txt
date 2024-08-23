@@ -7,6 +7,9 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 
 # 513，514提交答案题目，judgeinfo里没有timelimit信息，导致异常
 
+# 2882 有2个图片未能下载。
+图片下载出错：http://z4a.net/images/2018/10/17/Snipaste_2018-10-17_20-59-03..png,错误信息：..\downloads\loj.ac\2882\additional_file\Snipaste_2018-10-17_20-59-03.png出错重试.('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
+图片下载出错：http://z4a.net/images/2018/10/17/Snipaste_2018-10-17_21-03-29.png,错误信息：..\downloads\loj.ac\2882\additional_file\Snipaste_2018-10-17_21-03-29.png出错重试.('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
 
 2089 超时？
 Traceback (most recent call last):
