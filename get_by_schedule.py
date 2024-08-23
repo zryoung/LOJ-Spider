@@ -26,7 +26,7 @@ def get_pid_list(url):
     takeCount = 50
     pid_list = []
     try:
-        for skipCount in range(200, num, takeCount):            
+        for skipCount in range(1000, num, takeCount):
             try:
                 result = \
                     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
@@ -71,7 +71,7 @@ def get_problem_from_list():
     pid_list.pop(0)
     try:
         message = get_problem('https', 'loj.ac', pid)
-        print(message)
+        print(message, time.strftime("%Y %m %d %H:%M", time.localtime()))
     except Exception as e:
         logger.error(f'{pid},message:{e}')
 
@@ -81,7 +81,7 @@ def run_by_schedule():
     print(nowTime)
     
     # schedule.every().day.at(nowTime).do(getNewProblem)  # 每天的4:30执行一次任务
-    schedule.every(10).minutes.until("22:00").do(get_problem_from_list)  # 每10分钟
+    schedule.every(10).minutes.do(get_problem_from_list)  # 每10分钟
     # schedule.every().hour.do(getNewProblem)  # 每小时执行一次
     # schedule.every().day.at("10:30").do(job)
     # schedule.every().monday.do(job)

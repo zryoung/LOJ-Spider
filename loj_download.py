@@ -200,15 +200,15 @@ def get_problem(protocol, host, pid):
 ```output{section['sampleId']+1 if add else section['sampleId']}
 {result['samples'][section['sampleId']]['outputData']}
 ```
-                '''
+                '''                
             else:
                 content += f'\n## {section["sectionTitle"]}\n'
                 # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
                 
-                pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
-                # print(pic_path)
-                new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
-                content += f'\n{new_content}\n\n'
+            pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
+            # print(pic_path)
+            new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
+            content += f'\n{new_content}\n\n'
         
         locale = c['locale']
         if locale == 'en_US':
