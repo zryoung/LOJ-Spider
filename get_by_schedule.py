@@ -120,7 +120,8 @@ def run_by_apscheduler():
     scheduler.start()
 
 if __name__ == '__main__':
-    pid_list = get_pid_list()
+    with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
+        pid_list = json.load(f)
     print(pid_list)
     print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
     run_by_schedule()
