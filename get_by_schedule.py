@@ -18,6 +18,23 @@ from loguru import logger
 
 pid_list = []
 
+
+
+def catch_exceptions(cancel_on_failure=False):
+    def catch_exceptions_decorator(job_func):
+        @functools.wraps(job_func)
+        def wrapper(*args, **kwargs):
+            try:
+                return job_func(*args, **kwargs)
+            except:
+                import traceback
+                print(traceback.format_exc())
+                if cancel_on_failure:
+                    return schedule.CancelJob
+        return wrapper
+    return catch_exceptions_decorator
+
+@catch_exceptions()
 def get_pid_list(url):
     num = requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={
         "Content-Type": "application/json"
@@ -28,13 +45,14 @@ def get_pid_list(url):
     pid_list = []
     try:
         for skipCount in range(1247, num, takeCount):
-            # print('test',skipCount)
+            logger.info(f'获取题号列表{skipCount}')
             try:
                 result = \
                     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
                          data=dumps({"locale": "zh_CN", "skipCount": skipCount, "takeCount": takeCount})).json()["result"]
             except:
-                time.sleep(5)
+                # time.sleep(5)
+                logger.exception('异常')
                 result = \
                     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
                          data=dumps({"locale": "zh_CN", "skipCount": skipCount, "takeCount": takeCount})).json()["result"]
@@ -52,19 +70,6 @@ def get_pid_list(url):
         #     f.write(str(nowi))
         print("Done")
 
-def catch_exceptions(cancel_on_failure=False):
-    def catch_exceptions_decorator(job_func):
-        @functools.wraps(job_func)
-        def wrapper(*args, **kwargs):
-            try:
-                return job_func(*args, **kwargs)
-            except:
-                import traceback
-                print(traceback.format_exc())
-                if cancel_on_failure:
-                    return schedule.CancelJob
-        return wrapper
-    return catch_exceptions_decorator
 
 @catch_exceptions()
 def get_problem_from_list():
