@@ -12,8 +12,10 @@ import traceback
 from tenacity import retry, stop_after_attempt, wait_random
 from loj_download import *
 # import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
+# from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
+
+from util import request_post
 
 
 pid_list = []
@@ -76,7 +78,7 @@ def get_pid_list():
 @catch_exceptions()
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def query_problem_set(skipCount, takeCount):
-    return requests.post("https://api.loj.ac/api/problem/queryProblemSet",
+    return request_post("https://api.loj.ac/api/problem/queryProblemSet",
                     stream=True,
                     verify=False,
                     timeout=(5, 5), 
