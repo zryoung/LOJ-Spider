@@ -19,7 +19,7 @@ from util import request_post
 
 
 pid_list = []
-
+logger.add('../downloads/log.txt')
 
 
 def catch_exceptions(cancel_on_failure=False):
@@ -37,17 +37,15 @@ def catch_exceptions(cancel_on_failure=False):
     return catch_exceptions_decorator
 
 @logger.catch
-@catch_exceptions()
-@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
+# @catch_exceptions()
+# @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_pid_list():    
     skipCount = 0
     takeCount = 50
     num = query_problem_set(skipCount, takeCount)["count"]
     print(f'题目总数：{num}')
     pid_list = []
-    # result = \
-    #     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
-    #             data=dumps({"locale": "zh_CN", "skipCount": 1247, "takeCount": num})).json()["result"]
+    # result = query_problem_set(skipCount, num)["result"]
     # for item in result:
     #     pid_list.append(item['meta']['displayId'])
     # return pid_list
@@ -76,7 +74,7 @@ def get_pid_list():
         print("Done")
 
 @logger.catch
-@catch_exceptions()
+# @catch_exceptions()
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def query_problem_set(skipCount, takeCount):
     return request_post("https://api.loj.ac/api/problem/queryProblemSet",
@@ -132,7 +130,7 @@ if __name__ == '__main__':
     # fh.setFormatter(formatter)
     # logger.addHandler(fh)
 
-    logger.add('../downloads/log.txt')
+
     pid_list = get_pid_list()
     print(pid_list)
     print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
