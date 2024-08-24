@@ -37,14 +37,8 @@ def catch_exceptions(cancel_on_failure=False):
 @logger.catch
 @catch_exceptions()
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
-def get_pid_list(url):
-    num = requests.post("https://api.loj.ac/api/problem/queryProblemSet", 
-                stream=True,
-                verify=False,
-                timeout=(5, 5), 
-                headers={"Content-Type": "application/json"}, 
-                data=dumps({"locale": "zh_CN", "skipCount": 0, "takeCount": 50})
-            ).json()["count"]
+def get_pid_list():
+    num = query_problem_set(skipCount, takeCount)["count"]
     print(f'题目总数：{num}')
     skipCount = 0
     takeCount = 50
@@ -59,25 +53,11 @@ def get_pid_list(url):
         for skipCount in range(1247, num, takeCount):
             logger.info(f'获取题号列表{skipCount}')
             try:
-                result = \
-                    requests.post("https://api.loj.ac/api/problem/queryProblemSet",
-                    stream=True,
-                    verify=False,
-                    timeout=(5, 5), 
-                    headers={"Content-Type": "application/json"},
-                    data=dumps({"locale": "zh_CN", "skipCount": skipCount, "takeCount": takeCount})
-                ).json()["result"]
+                result = query_problem_set(skipCount, takeCount)["result"]
             except:
                 # time.sleep(5)
                 logger.exception('异常')
-                result = \
-                    requests.post("https://api.loj.ac/api/problem/queryProblemSet",
-                    stream=True,
-                    verify=False,
-                    timeout=(5, 5), 
-                    headers={"Content-Type": "application/json"},
-                    data=dumps({"locale": "zh_CN", "skipCount": skipCount, "takeCount": takeCount})
-                ).json()["result"]
+                result = query_problem_set(skipCount, takeCount)["result"]
             # print(result)
             # pid_list = [item['meta']['displayId'] for item in result]
             # print(pid_list)
@@ -91,6 +71,18 @@ def get_pid_list(url):
         # with open(directory + "history.dat", "w+") as f:
         #     f.write(str(nowi))
         print("Done")
+
+@logger.catch
+@catch_exceptions()
+@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
+def query_problem_set(skipCount, takeCount):
+    return requests.post("https://api.loj.ac/api/problem/queryProblemSet",
+                    stream=True,
+                    verify=False,
+                    timeout=(5, 5), 
+                    headers={"Content-Type": "application/json"},
+                    data=dumps({"locale": "zh_CN", "skipCount": skipCount, "takeCount": takeCount})
+                ).json()
 
 
 @catch_exceptions()
@@ -138,7 +130,7 @@ if __name__ == '__main__':
     # logger.addHandler(fh)
 
     logger.add('../downloads/log.txt')
-    pid_list = get_pid_list('https://api.loj.ac/api/problem/queryProblemSet')
+    pid_list = get_pid_list()
     print(pid_list)
     print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
     run_by_schedule()
