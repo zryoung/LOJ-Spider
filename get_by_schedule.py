@@ -54,12 +54,13 @@ def get_pid_list():
     try:
         for skipCount in range(1247, num, takeCount):
             logger.info(f'获取题号列表{skipCount}')
-            try:
-                result = query_problem_set(skipCount, takeCount)["result"]
-            except:
-                # time.sleep(5)
-                logger.exception('异常')
-                result = query_problem_set(skipCount, takeCount)["result"]
+            result = query_problem_set(skipCount, takeCount)["result"]
+            # try:
+            #     result = query_problem_set(skipCount, takeCount)["result"]
+            # except:
+            #     # time.sleep(5)
+            #     logger.exception('异常')
+            #     result = query_problem_set(skipCount, takeCount)["result"]
             # print(result)
             # pid_list = [item['meta']['displayId'] for item in result]
             # print(pid_list)
