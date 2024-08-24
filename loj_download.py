@@ -2,7 +2,7 @@
 
 
 import json
-import logging
+# import logging
 import random
 import os, re, requests, sys, yaml, time
 import time
@@ -12,20 +12,21 @@ from requests import packages
 from urllib.parse import urlparse
 import traceback
 from tenacity import retry, stop_after_attempt, wait_random
+from loguru import logger
 
 packages.urllib3.disable_warnings()  # 去除警告信息
 
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
 __dirname = fr"..\downloads"  # 下载目录放到项目目录的父目录
-
-logger = logging.getLogger("schedule")
-logger.setLevel(logging.ERROR)
-fh = logging.FileHandler(os.path.join(__dirname, 'log.txt'))
-fh.setLevel(logging.ERROR)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-fh.setFormatter(formatter)
-logger.addHandler(fh)
+logger.add(os.path.join(__dirname, 'log.txt'))
+# logger = logging.getLogger("schedule")
+# logger.setLevel(logging.ERROR)
+# fh = logging.FileHandler(os.path.join(__dirname, 'log.txt'))
+# fh.setLevel(logging.ERROR)
+# formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# fh.setFormatter(formatter)
+# logger.addHandler(fh)
 
 ScoreTypeMap = {
     "GroupMin": "min",
@@ -370,7 +371,10 @@ def get_problem(protocol, host, pid):
             raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
     for thread in threads:
         thread.join()
-    return f'{pid}下载完成'
+
+    message = f'{pid}下载完成'
+    print(message, time.strftime("%Y-%m-%d %H:%M", time.localtime()))
+    return message
    
 
 def run(url: str):
