@@ -12,7 +12,6 @@ import traceback
 from tenacity import retry, stop_after_attempt, wait_random
 from config import DOWNLOAD_PATH
 from loj_download import *
-# from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
 
 from util import request_post
@@ -113,16 +112,9 @@ def run_by_schedule():
         schedule.run_pending()
         time.sleep(1)
 
-def run_by_apscheduler():
-    print(f'开始：{time.strftime("%H:%M", time.localtime())}')
-    scheduler = BlockingScheduler()
-    scheduler.add_job(get_problem_from_list, 'cron', hour='0-8',minute='*/10')  # 10-11点，每10分钟执行一次
-    scheduler.start()
-
 if __name__ == '__main__':
     with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
         pid_list = json.load(f)
     print(pid_list)
     print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
     run_by_schedule()
-    # run_by_apscheduler()
