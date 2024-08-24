@@ -10,6 +10,7 @@ from requests import packages
 from urllib.parse import urlparse
 import traceback
 from tenacity import retry, stop_after_attempt, wait_random
+from config import DOWNLOAD_PATH
 from loj_download import *
 # from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
@@ -18,7 +19,7 @@ from util import request_post
 
 
 pid_list = []
-logger.add('../downloads/log.txt')
+logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
 
 
 def catch_exceptions(cancel_on_failure=False):
