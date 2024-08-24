@@ -92,6 +92,7 @@ def resume_download(url, file_path, retry=3):
         #     "download_url":url
         # }
         # file_writer('fail.json', json.dumps(data, ensure_ascii=False))
+        logger.error(f'{file_path}出错重试.{e}')
         raise Exception(f'{file_path}出错重试.{e}')
         # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
@@ -139,7 +140,7 @@ def get_and_replace_images(content, picpath):
         try:
             resume_download(url=img_url, file_path=pic_file_path)
         except Exception as e:
-            print(f'图片下载出错：{img_url},错误信息：{e}')
+            logger.error(f'图片下载出错：{img_url},错误信息：{e}')
         content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
 
     return content
@@ -304,70 +305,72 @@ def get_problem(protocol, host, pid):
                 config["subtasks"].append(current)
         writer('testdata/config.yaml', ordered_yaml_dump(config))
 
-    url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
-    # testData
-    data = dumps(
-            {
-            "problemId": result["meta"]["id"],
-            "type": "TestData",
-            "filenameList": [node["filename"] for node in result["testData"]],
-            }
+    try:
+        url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
+        # testData
+        data = dumps(
+                {
+                "problemId": result["meta"]["id"],
+                "type": "TestData",
+                "filenameList": [node["filename"] for node in result["testData"]],
+                }
+            )
+        # print(data)
+        # requests.adapters.DEFAULT_RETRIES = 5
+        r = requests.post(
+            url,
+            stream=True,
+            verify=False,
+            timeout=(5, 5),
+            headers={
+                "Content-Type": "application/json",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+            },
+            data=data,
         )
-    # print(data)
-    # requests.adapters.DEFAULT_RETRIES = 5
-    r = requests.post(
-        url,
-        stream=True,
-        verify=False,
-        timeout=(5, 5),
-        headers={
-            "Content-Type": "application/json",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-        },
-        data=data,
-    )
 
-    tasks = []  # 数据下载任务
-    for f in r.json()["downloadInfo"]:
-        if rename.get(f['filename']):
-            filename = rename[f['filename']]
-        else:
-            filename = f['filename']
-        size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
-        # print(size)
-        tasks.append([ filename , 'testdata', f['downloadUrl'], size])
+        tasks = []  # 数据下载任务
+        for f in r.json()["downloadInfo"]:
+            if rename.get(f['filename']):
+                filename = rename[f['filename']]
+            else:
+                filename = f['filename']
+            size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
+            # print(size)
+            tasks.append([ filename , 'testdata', f['downloadUrl'], size])
 
-    # additionalFiles
-    data = dumps(
-            {
-            "problemId": result["meta"]["id"],
-            "type": "AdditionalFile",
-            "filenameList": [node["filename"] for node in result["additionalFiles"]],
-            }
-        )    
-    # requests.adapters.DEFAULT_RETRIES = 5
-    r = requests.post(
-        url,
-        stream=True,
-        verify=False,
-        timeout=(5, 5),
-        headers={
-            "Content-Type": "application/json",
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-        },
-        data=data,
-    )
-    # tasks = []
-    for f in r.json()["downloadInfo"]:
-        if rename.get(f['filename']):
-            filename = rename[f['filename']]
-        else:
-            filename = f['filename']
-        size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
-        # print(size)
-        tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-    # print(tasks)
-
+        # additionalFiles
+        data = dumps(
+                {
+                "problemId": result["meta"]["id"],
+                "type": "AdditionalFile",
+                "filenameList": [node["filename"] for node in result["additionalFiles"]],
+                }
+            )    
+        # requests.adapters.DEFAULT_RETRIES = 5
+        r = requests.post(
+            url,
+            stream=True,
+            verify=False,
+            timeout=(5, 5),
+            headers={
+                "Content-Type": "application/json",
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+            },
+            data=data,
+        )
+        # tasks = []
+        for f in r.json()["downloadInfo"]:
+            if rename.get(f['filename']):
+                filename = rename[f['filename']]
+            else:
+                filename = f['filename']
+            size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
+            # print(size)
+            tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
+        # print(tasks)
+    except Exception as e:
+        logger.error(f'获取测试数据出错。原因：{e}')
     
     # 多线程下载
     threads = []
