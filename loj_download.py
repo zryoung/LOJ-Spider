@@ -159,8 +159,7 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
-    # print('test')
-    # try:
+
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
     result = requests.post(
         url,
@@ -216,7 +215,7 @@ def get_problem(protocol, host, pid):
                 # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
                 
             pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
-            # print(pic_path)
+
             new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
             content += f'\n{new_content}\n\n'
         
@@ -244,17 +243,9 @@ def get_problem(protocol, host, pid):
     ))
 
     judge = result['judgeInfo']
-    # print(judge)
+
     rename = dict()
     if judge:
-        # config = OrderedDict({
-        #     "time": f'{judge["timeLimit"]}ms',
-        #     "memory": f'{judge["memoryLimit"]}m'
-        # })
-        # config = {
-        #     "time": f'{judge.get("timeLimit", 1000)}ms',
-        #     "memory": f'{judge.get("memoryLimit", 256)}m'
-        # }
         config = dict()
         if judge.get("timeLimit"):
             config["time"] = f'{judge["timeLimit"]}ms'
@@ -280,8 +271,7 @@ def get_problem(protocol, host, pid):
                 config["checker"] = judge["checker"]["filename"]
         if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
             config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
-        # print(result)
-        # print(judge.get("subtasks"))
+
         if judge.get("subtasks"):
             config["subtasks"] = []
             for subtask in judge["subtasks"]:
@@ -315,8 +305,6 @@ def get_problem(protocol, host, pid):
                 "filenameList": [node["filename"] for node in result["testData"]],
                 }
             )
-        # print(data)
-        # requests.adapters.DEFAULT_RETRIES = 5
         r = requests.post(
             url,
             stream=True,
@@ -336,7 +324,6 @@ def get_problem(protocol, host, pid):
             else:
                 filename = f['filename']
             size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
-            # print(size)
             tasks.append([ filename , 'testdata', f['downloadUrl'], size])
 
         # additionalFiles
@@ -346,8 +333,7 @@ def get_problem(protocol, host, pid):
                 "type": "AdditionalFile",
                 "filenameList": [node["filename"] for node in result["additionalFiles"]],
                 }
-            )    
-        # requests.adapters.DEFAULT_RETRIES = 5
+            )
         r = requests.post(
             url,
             stream=True,
@@ -359,18 +345,15 @@ def get_problem(protocol, host, pid):
             },
             data=data,
         )
-        # tasks = []
         for f in r.json()["downloadInfo"]:
             if rename.get(f['filename']):
                 filename = rename[f['filename']]
             else:
                 filename = f['filename']
             size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
-            # print(size)
             tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-        # print(tasks)
     except Exception as e:
-        logger.error(f'获取测试数据出错。原因：{e}')
+        logger.error(f'{pid} 获取测试数据出错。原因：{e}')
     
     # 多线程下载
     threads = []
@@ -383,21 +366,11 @@ def get_problem(protocol, host, pid):
             thread.start()
             threads.append(thread)            
         except Exception as e:
+            logger.error(f'{pid} 数据下载出错。错误原因：{e}')
             raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
-            # file_writer('fail.json', 
-            #             data={
-            #                 "message": e,
-            #                 "function": "get_problem",
-            #             })
-            # print(f'function:get_problem:{pid}')
-            # print(e)
-            # print('=' * 16)
-            # print(traceback.format_exc())
     for thread in threads:
         thread.join()
     return f'{pid}下载完成'
-    # except Exception as e:
-    #     print(f'\n出错重试：{pid}-{e}')
    
 
 def run(url: str):
@@ -429,14 +402,6 @@ def run(url: str):
                     print(f'{i}出错，出错原因：{e}')
                     print('=' * 64)
                     print(traceback.format_exc())
-                    # try:
-                    #     message = get_problem(protocol, host, i)
-                    #     print(message)
-                    # except Exception as e:
-                    #     print(f'Error:{i}')
-                    #     print(e)                                    
-                    #     print('=' * 16)
-                    #     print(traceback.format_exc())
             # else:
             #     await v2(f"{prefix}{i}/")
         return
