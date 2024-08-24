@@ -37,11 +37,11 @@ def catch_exceptions(cancel_on_failure=False):
 @logger.catch
 @catch_exceptions()
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
-def get_pid_list():
-    num = query_problem_set(skipCount, takeCount)["count"]
-    print(f'题目总数：{num}')
+def get_pid_list():    
     skipCount = 0
     takeCount = 50
+    num = query_problem_set(skipCount, takeCount)["count"]
+    print(f'题目总数：{num}')
     pid_list = []
     # result = \
     #     requests.post("https://api.loj.ac/api/problem/queryProblemSet", headers={"Content-Type": "application/json"},
