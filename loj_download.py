@@ -2,6 +2,7 @@
 
 
 import json
+import logging
 import random
 import os, re, requests, sys, yaml, time
 import time
@@ -17,6 +18,14 @@ packages.urllib3.disable_warnings()  # 去除警告信息
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
 __dirname = fr"..\downloads"  # 下载目录放到项目目录的父目录
+
+logger = logging.getLogger("schedule")
+logger.setLevel(logging.ERROR)
+fh = logging.FileHandler(os.path.join(__dirname, 'log.txt'))
+fh.setLevel(logging.ERROR)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 ScoreTypeMap = {
     "GroupMin": "min",
