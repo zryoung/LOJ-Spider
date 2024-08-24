@@ -36,6 +36,7 @@ def catch_exceptions(cancel_on_failure=False):
 
 @logger.catch
 @catch_exceptions()
+@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_pid_list(url):
     num = requests.post("https://api.loj.ac/api/problem/queryProblemSet", 
                 stream=True,
