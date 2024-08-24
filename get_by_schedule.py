@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 import traceback
 from tenacity import retry, stop_after_attempt, wait_random
 from loj_download import *
-# import logging
 # from apscheduler.schedulers.blocking import BlockingScheduler
 from loguru import logger
 
@@ -120,17 +119,6 @@ def run_by_apscheduler():
     scheduler.start()
 
 if __name__ == '__main__':
-
-    # logger = logging.getLogger("apscheduler")
-    # logger = logging.getLogger("schedule")
-    # logger.setLevel(logging.DEBUG)
-    # fh = logging.FileHandler('../downloads/log.txt')
-    # fh.setLevel(logging.DEBUG)
-    # formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    # fh.setFormatter(formatter)
-    # logger.addHandler(fh)
-
-
     pid_list = get_pid_list()
     print(pid_list)
     print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
