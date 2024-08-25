@@ -1,3 +1,4 @@
+venv/
 venv/pyvenv.cfg
 venv/Lib/site-packages/distutils-precedence.pth
 venv/Lib/site-packages/PIL/__init__.py
