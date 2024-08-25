@@ -18,8 +18,6 @@ from util import request_post
 
 
 pid_list = []
-logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
-
 
 def catch_exceptions(cancel_on_failure=False):
     def catch_exceptions_decorator(job_func):
@@ -110,6 +108,8 @@ def run_by_schedule():
         time.sleep(1)
 
 if __name__ == '__main__':
+    logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
+    
     with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
         pid_list = json.load(f)
     # print(pid_list)
