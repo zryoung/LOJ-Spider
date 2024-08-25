@@ -35,21 +35,21 @@ def catch_exceptions(cancel_on_failure=False):
         return wrapper
     return catch_exceptions_decorator
 
-@logger.catch
+# @logger.catch
 # @catch_exceptions()
 # @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_pid_list():    
     skipCount = 0
     takeCount = 50
-    num = query_problem_set(skipCount, takeCount)["count"]
-    print(f'题目总数：{num}')
-    pid_list = []
-    # result = query_problem_set(skipCount, num)["result"]
-    # for item in result:
-    #     pid_list.append(item['meta']['displayId'])
-    # return pid_list
     try:
-        for skipCount in range(1247, num, takeCount):
+        num = query_problem_set(skipCount, takeCount)["count"]
+        print(f'题目总数：{num}')
+        pid_list = []
+        # result = query_problem_set(skipCount, num)["result"]
+        # for item in result:
+        #     pid_list.append(item['meta']['displayId'])
+        # return pid_list
+        for skipCount in range(2967, num, takeCount):
             logger.info(f'获取题号列表{skipCount}')
             result = query_problem_set(skipCount, takeCount)["result"]
             # try:
@@ -66,13 +66,10 @@ def get_pid_list():
             # print(skipCount)
         return pid_list
 
-    except KeyboardInterrupt as e:
-        print("Download Interupted...\n Saving Files... ", end="")
-        # with open(directory + "history.dat", "w+") as f:
-        #     f.write(str(nowi))
-        print("Done")
+    except Exception as e:
+        logger.error(f'获取题号列表出错，{skipCount=},{takeCount=}')
 
-@logger.catch
+# @logger.catch
 # @catch_exceptions()
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def query_problem_set(skipCount, takeCount):
@@ -115,6 +112,6 @@ def run_by_schedule():
 if __name__ == '__main__':
     with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
         pid_list = json.load(f)
-    print(pid_list)
-    print(f'开始题号：{pid_list[0]},{time.strftime("%Y-%m-%d %H:%M", time.localtime())}')
+    # print(pid_list)
+    logger.info(f'开始题号：{pid_list[0]}')
     run_by_schedule()
