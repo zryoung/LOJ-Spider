@@ -135,9 +135,10 @@ def get_and_replace_images(content, picpath):
         pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
         try:
             resume_download(url=img_url, file_path=pic_file_path)
+            content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
         except Exception as e:
             logger.error(f'图片下载出错：{img_url},错误信息：{e}')
-        content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
+        
 
     return content
 
