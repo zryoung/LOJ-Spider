@@ -13,14 +13,15 @@ import traceback
 from tenacity import retry, stop_after_attempt, wait_random
 from loguru import logger
 
+from config import DOWNLOAD_PATH
 from util import request_get, request_post
 
 packages.urllib3.disable_warnings()  # 去除警告信息
 
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
-__dirname = fr"..\downloads"  # 下载目录放到项目目录的父目录
-# logger.add(os.path.join(__dirname, 'log.txt'))
+__dirname = DOWNLOAD_PATH  # 下载目录放到项目目录的父目录
+
 
 ScoreTypeMap = {
     "GroupMin": "min",
