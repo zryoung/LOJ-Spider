@@ -13,6 +13,8 @@ import traceback
 from tenacity import retry, stop_after_attempt, wait_random
 from loguru import logger
 
+from util import request_get, request_post
+
 packages.urllib3.disable_warnings()  # 去除警告信息
 
 
@@ -34,7 +36,7 @@ LanguageMap = {
 def resume_download(url, file_path, retry=3):
     try:
         # 第一次请求是为了得到文件总大小
-        r1 = requests.get(url, stream=True, verify=False)
+        r1 = request_get(url, stream=True, verify=False)
         # 有些文件没有conteng-length这个信息
         if not r1.headers.get("Content-Length"):
             # print('hi')
@@ -60,7 +62,7 @@ def resume_download(url, file_path, retry=3):
             return
         # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
         headers = {"Range": f"bytes={temp_size}-"}
-        res = requests.get(url, stream=True, headers=headers,timeout=(6.1,21.1))
+        res = request_get(url, stream=True, headers=headers,timeout=(6.1,21.1))
 
         with open(file_path, "ab") as file:
             for chunk in res.iter_content(chunk_size=1024):
@@ -154,7 +156,7 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 def get_problem(protocol, host, pid):
 
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
-    result = requests.post(
+    result = request_post(
         url,
         stream=True,
         verify=False,
@@ -298,7 +300,7 @@ def get_problem(protocol, host, pid):
                 "filenameList": [node["filename"] for node in result["testData"]],
                 }
             )
-        r = requests.post(
+        r = request_post(
             url,
             stream=True,
             verify=False,
@@ -327,7 +329,7 @@ def get_problem(protocol, host, pid):
                 "filenameList": [node["filename"] for node in result["additionalFiles"]],
                 }
             )
-        r = requests.post(
+        r = request_post(
             url,
             stream=True,
             verify=False,
