@@ -40,11 +40,8 @@ def resume_download(url, file_path, retry=3):
     r1 = request_get(url, stream=True, verify=False)
     # 有些文件没有conteng-length这个信息
     if not r1.headers.get("Content-Length"):
-        # print('hi')
         with open(file_path, 'ab') as file:
             file.write(r1.content)
-
-        # print(f'{file_path}下载完成')
         return
     
     total_size = int(r1.headers["Content-Length"])
@@ -55,9 +52,6 @@ def resume_download(url, file_path, retry=3):
     else:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         temp_size = 0
-    # 显示一下下载了多少
-    # print(f'已下载:{temp_size}')
-    # print(f'文件总大小:{total_size}')
 
     if temp_size >= total_size:
         return
@@ -79,7 +73,6 @@ def resume_download(url, file_path, retry=3):
                 )
                 sys.stdout.flush()
     print()  # 避免上面\r 回车符
-    # print(f'{file_path}下载完成')
     # except Exception as e:
     #     # data={
     #     #     "time": time.localtime(),
@@ -129,7 +122,6 @@ def get_and_replace_images(content, picpath):
 
     if img_arr:
         os.makedirs(picpath, exist_ok=True)
-    # print(img_arr)
     for img_url in img_arr:
         filename, extension = get_filename_and_extension(url=img_url)
         pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
@@ -137,9 +129,7 @@ def get_and_replace_images(content, picpath):
             resume_download(url=img_url, file_path=pic_file_path)
             content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
         except Exception as e:
-            logger.error(f'图片下载出错：{img_url},错误信息：{e}')
-        
-
+            logger.error(f'图片下载出错：{img_url},错误信息：{e}') 
     return content
 
 def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
@@ -369,7 +359,6 @@ def get_problem(protocol, host, pid):
         thread.join()
 
     message = f'{pid}下载完成。{time.strftime("%Y-%m-%d %H:%M", time.localtime())}'
-    print(message)
     return message
    
 
@@ -397,11 +386,9 @@ def run(url: str):
                 try:
                     time.sleep(random.random()*5)
                     message = get_problem(protocol, host, i)
-                    print(message)
+                    logger.info(message)
                 except Exception as e:
-                    print(f'{i}出错，出错原因：{e}')
-                    print('=' * 64)
-                    print(traceback.format_exc())
+                    logger.error(f'{i}出错，出错原因：{e}')
             # else:
             #     await v2(f"{prefix}{i}/")
         return
@@ -417,8 +404,6 @@ def run(url: str):
 
 
 if __name__ == "__main__":
-    
-    # print(sys.argv)
     if len(sys.argv) < 2:
         print("loj-download <url>")
     else:
@@ -427,9 +412,7 @@ if __name__ == "__main__":
             # 以下报错：a coroutine was expected, got None
             # asyncio.run(run(sys.argv[1]))
         except Exception as e:
-            print(e)            
-            print('=' * 16)
-            print(traceback.format_exc())
+            logger.error(e)
 
             time.sleep(1)
             sys.exit(1)
