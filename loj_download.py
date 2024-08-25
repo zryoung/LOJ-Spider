@@ -358,7 +358,7 @@ def get_problem(protocol, host, pid):
     for thread in threads:
         thread.join()
 
-    message = f'{pid}下载完成。{time.strftime("%Y-%m-%d %H:%M", time.localtime())}'
+    message = f'{pid}下载完成。'
     return message
    
 
