@@ -89,7 +89,7 @@ def get_problem_from_list():
     pid_list.pop(0)
     try:
         message = get_problem('https', 'loj.ac', pid)
-        print(message)
+        logger.info(message)
     except Exception as e:
         logger.error(f'{pid},message:{e}')
 
