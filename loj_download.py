@@ -404,6 +404,8 @@ def run(url: str):
 
 
 if __name__ == "__main__":
+    logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
+
     if len(sys.argv) < 2:
         print("loj-download <url>")
     else:
