@@ -4,6 +4,8 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 解决思路：
 获取需要下载的信息保存在本地download_info.json，下载每题前先检测是否有该文件，文件中记录有哪些文件未完整下载
 
+#3238 checker的格式似乎不完整
+
 
 # 513，514提交答案题目，judgeinfo里没有timelimit信息，导致异常
 
