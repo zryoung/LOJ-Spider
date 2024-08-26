@@ -238,7 +238,12 @@ def get_problem(protocol, host, pid):
         try:
             
             filepath = os.path.join(__dirname,host,str(pid),type,name)
-
+            if os.path.exists(filepath):
+                temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
+                # 如果文件已下载完成，则不加入线程池
+                if temp_size == expected_size:
+                    continue
+                
             thread = threading.Thread(target=resume_download, args=(url, filepath))
             thread.start()
             threads.append(thread)            
