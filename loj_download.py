@@ -30,6 +30,7 @@ ScoreTypeMap = {
 }
 LanguageMap = {
     "cpp": "cc",
+    "python": "py",
 }
 
 
