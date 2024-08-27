@@ -170,65 +170,69 @@ def get_problem(protocol, host, pid):
                 config["subtasks"].append(current)
         writer('testdata/config.yaml', ordered_yaml_dump(config))
 
-    try:
-        url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
-        # testData
-        data = dumps(
-                {
-                "problemId": result["meta"]["id"],
-                "type": "TestData",
-                "filenameList": [node["filename"] for node in result["testData"]],
-                }
-            )
-        r = request_post(
-            url,
-            stream=True,
-            verify=False,
-            timeout=(5, 5),
-            headers={
-                "Content-Type": "application/json",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-            },
-            data=data,
-        )
+    # try:
 
-        tasks = []  # 数据下载任务
-        for f in r.json()["downloadInfo"]:
-            if rename.get(f['filename']):
-                filename = rename[f['filename']]
-            else:
-                filename = f['filename']
-            size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
-            tasks.append([ filename , 'testdata', f['downloadUrl'], size])
-
-        # additionalFiles
-        data = dumps(
-                {
-                "problemId": result["meta"]["id"],
-                "type": "AdditionalFile",
-                "filenameList": [node["filename"] for node in result["additionalFiles"]],
-                }
-            )
-        r = request_post(
-            url,
-            stream=True,
-            verify=False,
-            timeout=(5, 5),
-            headers={
-                "Content-Type": "application/json",
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
-            },
-            data=data,
+    
+    url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
+    # testData
+    data = dumps(
+            {
+            "problemId": result["meta"]["id"],
+            "type": "TestData",
+            "filenameList": [node["filename"] for node in result["testData"]],
+            }
         )
-        for f in r.json()["downloadInfo"]:
-            if rename.get(f['filename']):
-                filename = rename[f['filename']]
-            else:
-                filename = f['filename']
-            size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
-            tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-    except Exception as e:
-        logger.error(f'{pid} 获取测试数据出错。原因：{e}')
+    r = request_post(
+        url,
+        stream=True,
+        verify=False,
+        timeout=(5, 5),
+        headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+        },
+        data=data,
+    )
+
+    tasks = []  # 数据下载任务
+    for f in r.json()["downloadInfo"]:
+        if rename.get(f['filename']):
+            filename = rename[f['filename']]
+        else:
+            filename = f['filename']
+        size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
+        tasks.append([ filename , 'testdata', f['downloadUrl'], size])
+
+    # additionalFiles
+    data = dumps(
+            {
+            "problemId": result["meta"]["id"],
+            "type": "AdditionalFile",
+            "filenameList": [node["filename"] for node in result["additionalFiles"]],
+            }
+        )
+    r = request_post(
+        url,
+        stream=True,
+        verify=False,
+        timeout=(5, 5),
+        headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10",
+        },
+        data=data,
+    )
+    for f in r.json()["downloadInfo"]:
+        if rename.get(f['filename']):
+            filename = rename[f['filename']]
+        else:
+            filename = f['filename']
+        size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
+        tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
+
+
+    # except Exception as e:
+    #     logger.error(f'{pid} 获取测试数据出错。原因：{e}')
     
     # 多线程下载
     threads = []
