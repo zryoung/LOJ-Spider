@@ -98,14 +98,11 @@ def file_writer(file_path, content):
         )
 
 def create_writer(file_path):
-    print(f'{file_path=}')
     path = os.path.join(str(file_path))
-    print(f'{path=}')
 
     def writer(filname, content=None):
         target = os.path.join(path, filname)
         target_dir = os.path.dirname(target)
-        print(f'{target=}')
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
         if content==None:
