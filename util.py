@@ -7,7 +7,6 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
-from config import DOWNLOAD_PATH
 
 
 # @logger.catch
@@ -89,8 +88,8 @@ def resume_download(url, file_path):
     #     raise Exception(f'{file_path}出错重试.{e}')
     #     # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
-def file_writer(filename, content):
-    with open(os.path.join(__dirname,filename), 'a', encoding='utf-8') as file:
+def file_writer(file_path, content):
+    with open(file_path, 'a', encoding='utf-8') as file:
         yaml.dump(
             data=content,
             stream=file,
@@ -98,14 +97,15 @@ def file_writer(filename, content):
             encoding='utf-8'
         )
 
-# TODO:把文件夹移出，减少关联
-__dirname = DOWNLOAD_PATH
-def create_writer(id):
-    path = os.path.join(__dirname,str(id))
+def create_writer(file_path):
+    print(f'{file_path=}')
+    path = os.path.join(str(file_path))
+    print(f'{path=}')
 
     def writer(filname, content=None):
         target = os.path.join(path, filname)
         target_dir = os.path.dirname(target)
+        print(f'{target=}')
         if not os.path.exists(target_dir):
             os.makedirs(target_dir, exist_ok=True)
         if content==None:

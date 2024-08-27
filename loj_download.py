@@ -64,7 +64,7 @@ def get_problem(protocol, host, pid):
     if not result.get('localizedContentsOfAllLocales'):
         return f'{pid}没有该题'
     
-    writer = create_writer(os.path.join(host,str(pid)))
+    writer = create_writer(os.path.join(DOWNLOAD_PATH, host,str(pid)))
     for c in result['localizedContentsOfAllLocales']:
         content = ''
         sections = c['contentSections']
