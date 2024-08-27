@@ -172,7 +172,7 @@ def get_problem(protocol, host, pid):
 
     # try:
 
-    
+
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
     # testData
     data = dumps(
@@ -251,6 +251,7 @@ def get_problem(protocol, host, pid):
             threads.append(thread)            
         except Exception as e:
             logger.error(f'{pid} 数据下载出错。错误原因：{e}')
+            logger.error(f"\n{traceback.format_exc()}\n")
             # raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
     for thread in threads:
         thread.join()
@@ -286,6 +287,7 @@ def run(url: str):
                     logger.info(message)
                 except Exception as e:
                     logger.error(f'{i}出错，出错原因：{e}')
+                    logger.error(f"\n{traceback.format_exc()}\n")
             # else:
             #     await v2(f"{prefix}{i}/")
         return
