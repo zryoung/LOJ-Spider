@@ -98,6 +98,7 @@ def file_writer(filename, content):
             encoding='utf-8'
         )
 
+# TODO:把文件夹移出，减少关联
 __dirname = DOWNLOAD_PATH
 def create_writer(id):
     path = os.path.join(__dirname,str(id))

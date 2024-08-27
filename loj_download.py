@@ -105,9 +105,7 @@ def get_problem(protocol, host, pid):
     
     tags = [ node['name'] for node in result['tagsOfLocale'] ]
     
-    title = [
-        *filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])
-    ][0]['title']
+    title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
     writer('problem.yaml', ordered_yaml_dump({
         "title": title,
         "owner": 1,
@@ -243,7 +241,7 @@ def get_problem(protocol, host, pid):
                 # 如果文件已下载完成，则不加入线程池
                 if temp_size == expected_size:
                     continue
-                
+
             thread = threading.Thread(target=resume_download, args=(url, filepath))
             thread.start()
             threads.append(thread)            
