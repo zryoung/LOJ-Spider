@@ -4,8 +4,21 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 解决思路：
 获取需要下载的信息保存在本地download_info.json，下载每题前先检测是否有该文件，文件中记录有哪些文件未完整下载
 
+#3238 checker的格式似乎不完整
+
 
 # 513，514提交答案题目，judgeinfo里没有timelimit信息，导致异常
+
+# 2882 有2个图片未能下载。
+图片下载出错：http://z4a.net/images/2018/10/17/Snipaste_2018-10-17_20-59-03..png,错误信息：..\downloads\loj.ac\2882\additional_file\Snipaste_2018-10-17_20-59-03.png出错重试.('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
+图片下载出错：http://z4a.net/images/2018/10/17/Snipaste_2018-10-17_21-03-29.png,错误信息：..\downloads\loj.ac\2882\additional_file\Snipaste_2018-10-17_21-03-29.png出错重试.('Connection aborted.', ConnectionResetError(10054, '远程主机强迫关闭了一个现有的连接。', None, 10054, None))
+
+# 3079 创建文件/文件夹出错，loguru未记录。
+  File "F:\MYOI\loj\LOJ-Spider\loj_download.py", line 43, in resume_download
+    with open(file_path, 'ab') as file:
+FileNotFoundError: [Errno 2] No such file or directory: '../downloads\\loj.ac\\3079\\additional_file\\game1.in'
+
+# 获取测试数据出错,重试机制好像没启动
 
 
 2089 超时？

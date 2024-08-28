@@ -11,12 +11,17 @@ from requests import packages
 from urllib.parse import urlparse
 import traceback
 from tenacity import retry, stop_after_attempt, wait_random
+from loguru import logger
+
+from config import DOWNLOAD_PATH
+from util import create_writer, get_and_replace_images, ordered_yaml_dump, request_get, request_post, resume_download
 
 packages.urllib3.disable_warnings()  # 去除警告信息
 
 
 RE_SYZOJ = re.compile(r'(https?):\/\/([^/]+)\/(problem|p)\/([0-9]+)\/?', re.IGNORECASE)
-__dirname = fr"..\downloads"  # 下载目录放到项目目录的父目录
+__dirname = DOWNLOAD_PATH  # 下载目录放到项目目录的父目录
+
 
 ScoreTypeMap = {
     "GroupMin": "min",
@@ -25,134 +30,15 @@ ScoreTypeMap = {
 }
 LanguageMap = {
     "cpp": "cc",
+    "python": "py",
 }
 
 
-@retry(stop=stop_after_attempt(5), wait=wait_random(1, 3), reraise=True)
-def resume_download(url, file_path, retry=3):
-    try:
-        # 第一次请求是为了得到文件总大小
-        r1 = requests.get(url, stream=True, verify=False)
-        # 有些文件没有conteng-length这个信息
-        if not r1.headers.get("Content-Length"):
-            # print('hi')
-            with open(file_path, 'ab') as file:
-                file.write(r1.content)
-
-            # print(f'{file_path}下载完成')
-            return
-        
-        total_size = int(r1.headers["Content-Length"])
-
-        # 这重要了，先看看本地文件下载了多少
-        if os.path.exists(file_path):
-            temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
-        else:
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            temp_size = 0
-        # 显示一下下载了多少
-        # print(f'已下载:{temp_size}')
-        # print(f'文件总大小:{total_size}')
-
-        if temp_size >= total_size:
-            return
-        # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
-        headers = {"Range": f"bytes={temp_size}-"}
-        res = requests.get(url, stream=True, headers=headers,timeout=(6.1,21.1))
-
-        with open(file_path, "ab") as file:
-            for chunk in res.iter_content(chunk_size=1024):
-                if chunk:
-                    temp_size += len(chunk)
-                    file.write(chunk)
-                    file.flush()
-
-                    ###这是下载实现进度显示####
-                    done = int(50 * temp_size / total_size)
-                    sys.stdout.write(
-                        f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
-                    )
-                    sys.stdout.flush()
-        print()  # 避免上面\r 回车符
-        # print(f'{file_path}下载完成')
-    except Exception as e:
-        # data={
-        #     "time": time.localtime(),
-        #     "message":str(e),
-        #     "file": file_path,
-        #     "download_url":url
-        # }
-        # file_writer('fail.json', json.dumps(data, ensure_ascii=False))
-        raise Exception(f'{file_path}出错重试.{e}')
-        # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
-
-def file_writer(filename, content):
-    with open(os.path.join(__dirname,filename), 'a', encoding='utf-8') as file:
-        yaml.dump(
-            data=content,
-            stream=file,
-            indent=2,
-            encoding='utf-8'
-        )
-
-def create_writer(id):
-    path = os.path.join(__dirname,str(id))
-
-    def writer(filname, content=None):
-        target = os.path.join(path, filname)
-        target_dir = os.path.dirname(target)
-        if not os.path.exists(target_dir):
-            os.makedirs(target_dir, exist_ok=True)
-        if content==None:
-            return target
-        with open(target, 'w', encoding='utf-8') as file:
-            file.write(content)
-    
-    return writer
-
-def get_filename_and_extension(url):
-    parsed_url = urlparse(url)
-    path = parsed_url.path
-    filename_with_extension = path.split('/')[-1]
-    filename = filename_with_extension.split('.')[0]
-    extension = filename_with_extension.split('.')[-1]
-    return filename, extension
-
-def get_and_replace_images(content, picpath):
-    img_arr = re.findall(r'!\[.*?\]\((.*?)\)', content)
-
-    if img_arr:
-        os.makedirs(picpath, exist_ok=True)
-    # print(img_arr)
-    for img_url in img_arr:
-        filename, extension = get_filename_and_extension(url=img_url)
-        pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
-        try:
-            resume_download(url=img_url, file_path=pic_file_path)
-        except Exception as e:
-            print(f'图片下载出错：{img_url},错误信息：{e}')
-        content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
-
-    return content
-
-def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
-    class OrderedDumper(Dumper):
-        pass
-
-    def _dict_representer(dumper, data):
-        return dumper.represent_mapping(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-            data.items())
-
-    OrderedDumper.add_representer(dict, _dict_representer)
-    return yaml.dump(data, stream, OrderedDumper, **kwds)
-
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
-    # print('test')
-    # try:
+
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
-    result = requests.post(
+    result = request_post(
         url,
         stream=True,
         verify=False,
@@ -178,7 +64,7 @@ def get_problem(protocol, host, pid):
     if not result.get('localizedContentsOfAllLocales'):
         return f'{pid}没有该题'
     
-    writer = create_writer(os.path.join(host,str(pid)))
+    writer = create_writer(os.path.join(DOWNLOAD_PATH, host,str(pid)))
     for c in result['localizedContentsOfAllLocales']:
         content = ''
         sections = c['contentSections']
@@ -200,15 +86,15 @@ def get_problem(protocol, host, pid):
 ```output{section['sampleId']+1 if add else section['sampleId']}
 {result['samples'][section['sampleId']]['outputData']}
 ```
-                '''
+                '''                
             else:
                 content += f'\n## {section["sectionTitle"]}\n'
                 # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
                 
-                pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
-                # print(pic_path)
-                new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
-                content += f'\n{new_content}\n\n'
+            pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
+
+            new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
+            content += f'\n{new_content}\n\n'
         
         locale = c['locale']
         if locale == 'en_US':
@@ -219,9 +105,7 @@ def get_problem(protocol, host, pid):
     
     tags = [ node['name'] for node in result['tagsOfLocale'] ]
     
-    title = [
-        *filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])
-    ][0]['title']
+    title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
     writer('problem.yaml', ordered_yaml_dump({
         "title": title,
         "owner": 1,
@@ -234,17 +118,9 @@ def get_problem(protocol, host, pid):
     ))
 
     judge = result['judgeInfo']
-    # print(judge)
+
     rename = dict()
     if judge:
-        # config = OrderedDict({
-        #     "time": f'{judge["timeLimit"]}ms',
-        #     "memory": f'{judge["memoryLimit"]}m'
-        # })
-        # config = {
-        #     "time": f'{judge.get("timeLimit", 1000)}ms',
-        #     "memory": f'{judge.get("memoryLimit", 256)}m'
-        # }
         config = dict()
         if judge.get("timeLimit"):
             config["time"] = f'{judge["timeLimit"]}ms'
@@ -270,8 +146,7 @@ def get_problem(protocol, host, pid):
                 config["checker"] = judge["checker"]["filename"]
         if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
             config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
-        # print(result)
-        # print(judge.get("subtasks"))
+
         if judge.get("subtasks"):
             config["subtasks"] = []
             for subtask in judge["subtasks"]:
@@ -295,6 +170,9 @@ def get_problem(protocol, host, pid):
                 config["subtasks"].append(current)
         writer('testdata/config.yaml', ordered_yaml_dump(config))
 
+    # try:
+
+
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
     # testData
     data = dumps(
@@ -304,9 +182,7 @@ def get_problem(protocol, host, pid):
             "filenameList": [node["filename"] for node in result["testData"]],
             }
         )
-    # print(data)
-    # requests.adapters.DEFAULT_RETRIES = 5
-    r = requests.post(
+    r = request_post(
         url,
         stream=True,
         verify=False,
@@ -325,7 +201,6 @@ def get_problem(protocol, host, pid):
         else:
             filename = f['filename']
         size = [*filter(lambda x: x['filename']==f['filename'], result['testData'])][0]['size']
-        # print(size)
         tasks.append([ filename , 'testdata', f['downloadUrl'], size])
 
     # additionalFiles
@@ -335,9 +210,8 @@ def get_problem(protocol, host, pid):
             "type": "AdditionalFile",
             "filenameList": [node["filename"] for node in result["additionalFiles"]],
             }
-        )    
-    # requests.adapters.DEFAULT_RETRIES = 5
-    r = requests.post(
+        )
+    r = request_post(
         url,
         stream=True,
         verify=False,
@@ -348,17 +222,17 @@ def get_problem(protocol, host, pid):
         },
         data=data,
     )
-    # tasks = []
     for f in r.json()["downloadInfo"]:
         if rename.get(f['filename']):
             filename = rename[f['filename']]
         else:
             filename = f['filename']
         size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
-        # print(size)
         tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-    # print(tasks)
 
+
+    # except Exception as e:
+    #     logger.error(f'{pid} 获取测试数据出错。原因：{e}')
     
     # 多线程下载
     threads = []
@@ -366,26 +240,24 @@ def get_problem(protocol, host, pid):
         try:
             
             filepath = os.path.join(__dirname,host,str(pid),type,name)
+            if os.path.exists(filepath):
+                temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
+                # 如果文件已下载完成，则不加入线程池
+                if temp_size == expected_size:
+                    continue
 
             thread = threading.Thread(target=resume_download, args=(url, filepath))
             thread.start()
             threads.append(thread)            
         except Exception as e:
-            raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
-            # file_writer('fail.json', 
-            #             data={
-            #                 "message": e,
-            #                 "function": "get_problem",
-            #             })
-            # print(f'function:get_problem:{pid}')
-            # print(e)
-            # print('=' * 16)
-            # print(traceback.format_exc())
+            logger.error(f'{pid} 数据下载出错。错误原因：{e}')
+            logger.error(f"\n{traceback.format_exc()}\n")
+            # raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
     for thread in threads:
         thread.join()
-    return f'{pid}下载完成'
-    # except Exception as e:
-    #     print(f'\n出错重试：{pid}-{e}')
+
+    message = f'{pid}下载完成。'
+    return message
    
 
 def run(url: str):
@@ -412,19 +284,10 @@ def run(url: str):
                 try:
                     time.sleep(random.random()*5)
                     message = get_problem(protocol, host, i)
-                    print(message)
+                    logger.info(message)
                 except Exception as e:
-                    print(f'{i}出错，出错原因：{e}')
-                    print('=' * 64)
-                    print(traceback.format_exc())
-                    # try:
-                    #     message = get_problem(protocol, host, i)
-                    #     print(message)
-                    # except Exception as e:
-                    #     print(f'Error:{i}')
-                    #     print(e)                                    
-                    #     print('=' * 16)
-                    #     print(traceback.format_exc())
+                    logger.error(f'{i}出错，出错原因：{e}')
+                    logger.error(f"\n{traceback.format_exc()}\n")
             # else:
             #     await v2(f"{prefix}{i}/")
         return
@@ -440,8 +303,8 @@ def run(url: str):
 
 
 if __name__ == "__main__":
-    
-    # print(sys.argv)
+    logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
+
     if len(sys.argv) < 2:
         print("loj-download <url>")
     else:
@@ -450,9 +313,7 @@ if __name__ == "__main__":
             # 以下报错：a coroutine was expected, got None
             # asyncio.run(run(sys.argv[1]))
         except Exception as e:
-            print(e)            
-            print('=' * 16)
-            print(traceback.format_exc())
+            logger.error(e)
 
             time.sleep(1)
             sys.exit(1)
