@@ -64,7 +64,11 @@ def get_problem(protocol, host, pid):
     if not result.get('localizedContentsOfAllLocales'):
         return f'{pid}没有该题'
     
-    writer = create_writer(os.path.join(DOWNLOAD_PATH, host,str(pid)))
+    title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
+    
+    # 题目文件夹：“题号+标题”
+    problem_path = os.path.join(DOWNLOAD_PATH, host,str(pid)+title)
+    writer = create_writer(problem_path)
     for c in result['localizedContentsOfAllLocales']:
         content = ''
         sections = c['contentSections']
@@ -91,7 +95,7 @@ def get_problem(protocol, host, pid):
                 content += f'\n## {section["sectionTitle"]}\n'
                 # TODO: 下载图片 LOJ6610,4175有图片,LOJ4174多图
                 
-            pic_path = os.path.join(__dirname, host, str(pid), 'additional_file')
+            pic_path = os.path.join(problem_path, 'additional_file')
 
             new_content = get_and_replace_images(content=section["text"], picpath=pic_path)
             content += f'\n{new_content}\n\n'
@@ -105,7 +109,7 @@ def get_problem(protocol, host, pid):
     
     tags = [ node['name'] for node in result['tagsOfLocale'] ]
     
-    title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
+    
     writer('problem.yaml', ordered_yaml_dump({
         "title": title,
         "owner": 1,
@@ -239,7 +243,7 @@ def get_problem(protocol, host, pid):
     for name, type, url, expected_size in tasks:
         try:
             
-            filepath = os.path.join(__dirname,host,str(pid),type,name)
+            filepath = os.path.join(problem_path, type, name)
             if os.path.exists(filepath):
                 temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
                 # 如果文件已下载完成，则不加入线程池

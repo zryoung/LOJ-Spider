@@ -6,6 +6,7 @@ downloads\loj.ac\134\testdata\1.in Error:"message:"('Connection broken: Incomple
 
 #3238 checker的格式似乎不完整
 
+# 3484 下载1354%   ？？？？ ../downloads\loj.ac\3484\testdata\anagramistica.out.2d
 
 # 513，514提交答案题目，judgeinfo里没有timelimit信息，导致异常
 
