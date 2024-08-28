@@ -6,57 +6,58 @@ import zipfile
 
 import html2text
 from requests import *
+from util import request_get, request_post, resume_download, get_and_replace_images, get_filename_and_extension
 
 domain = r'http://www.usaco.org/'
 work_dir = r'd:/usaco1/'
 debug_flag = True
 
 
-def log(s):
-    if debug_flag:
-        print(s)
+# def log(s):
+#     if debug_flag:
+#         print(s)
 
 
-def log_error(s):
-    print(s)
+# def log_error(s):
+#     print(s)
 
 
-class Worker(threading.Thread):
-    def __init__(self, q):
-        threading.Thread.__init__(self)
-        self.queue = q
+# class Worker(threading.Thread):
+#     def __init__(self, q):
+#         threading.Thread.__init__(self)
+#         self.queue = q
 
-    def run(self):
-        while True:
-            if self.queue.empty():
-                break
+#     def run(self):
+#         while True:
+#             if self.queue.empty():
+#                 break
 
 
-def request_get(url):
-    headers = {
-        "Content-Type": "application/json",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62 "
-    }
-    try_times = 3  # 重试的次数
-    response = None
-    for i in range(try_times):
-        try:
-            response = get(url, headers=headers, verify=False, proxies=None, timeout=5)
-            # 注意此处也可能是302等状态码
-            if response.status_code == 200:
-                response.close()
-                return response.text
-        except Exception as e:
-            # logdebug(f'requests failed {i}time')
-            log_error(f'requests failed {i + 1} time,ERROR: {e},, 涉及题目：{url}')
-    if response:
-        response.close()
-    return ''
+# def request_get(url):
+#     headers = {
+#         "Content-Type": "application/json",
+#         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+#                       "Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62 "
+#     }
+#     try_times = 3  # 重试的次数
+#     response = None
+#     for i in range(try_times):
+#         try:
+#             response = get(url, headers=headers, verify=False, proxies=None, timeout=5)
+#             # 注意此处也可能是302等状态码
+#             if response.status_code == 200:
+#                 response.close()
+#                 return response.text
+#         except Exception as e:
+#             # logdebug(f'requests failed {i}time')
+#             log_error(f'requests failed {i + 1} time,ERROR: {e},, 涉及题目：{url}')
+#     if response:
+#         response.close()
+#     return ''
 
 
 def get_contest_list():
-    html = request_get(domain + "index.php?page=contests")
+    html = request_get(domain + "index.php?page=contests").text
     pattern = r'<a href="(.*?results)">.*?</a>'
     links = re.findall(pattern, html, re.M)
     # log(len(link_list))
@@ -72,7 +73,7 @@ def get_contest_medal_list(_url):
     :param _url:比赛主页url
     :return: medal：级别，title:标题，description：描述，data：数据，solution：题解
     """
-    html = request_get(_url)
+    html = request_get(_url).text
     pattern1 = r"<div style:'position:relative;float:right;'>" \
                r"<b>(.*?)</b>.*?" \
                r"<a href='(.*?)'>View problem</a>.*?" \
@@ -123,7 +124,7 @@ def get_description(_url):
     :return: json格式的题目描述
     """
     # 获得题头
-    html = request_get(_url)
+    html = request_get(_url).text
     pattern = r'<h2>(.*?)</h2>'
     medal_title = re.findall(pattern, html)
     log(medal_title)
@@ -146,7 +147,7 @@ def get_description_by_lang(url, medal_title):
     :param medal_title: 级别及标题
     :return: 题目描述
     """
-    html = request_get(url)
+    html = request_get(url).text
     # 获得题面
     pattern = r'<div.*?class="problem-text".*?>(.*?) Contest has ended.'
     description = re.findall(pattern, html, re.M | re.S)
@@ -180,7 +181,7 @@ def get_data(url, directory):
 
 
 def get_solution(url):
-    html = request_get(url)
+    html = request_get(url).text
 
     # txt = del_html(html)
     txt = html2text.html2text(html)
