@@ -8,6 +8,8 @@ from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
 
+def log_while_last_retry(retry_state):
+    logger.error(retry_state.outcome.result())  # 打印原函数的返回值
 
 # @logger.catch
 @retry(stop=stop_after_attempt(5),wait=wait_random(1, 3), reraise=True)
