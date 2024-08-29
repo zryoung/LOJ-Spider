@@ -12,7 +12,7 @@ def log_while_last_retry(retry_state):
     logger.error(retry_state.outcome.result())  # 打印原函数的返回值
 
 # @logger.catch
-@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3), reraise=True)
+@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
 def request_post(url, headers=None, data=None, json=None, stream=True,verify=False, timeout=(5, 5)):
     return requests.post(
         url,
@@ -25,7 +25,7 @@ def request_post(url, headers=None, data=None, json=None, stream=True,verify=Fal
     )
 
 # @logger.catch
-@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
+@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry,wait=wait_random(1, 3),reraise=True)
 def request_get(url, params=None, headers=None, stream=False,verify=False, timeout=(5, 5)):
     return requests.get(
         url, 
@@ -38,7 +38,7 @@ def request_get(url, params=None, headers=None, stream=False,verify=False, timeo
 
 
 
-@retry(stop=stop_after_attempt(5), wait=wait_random(1, 3), reraise=True)
+@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
 def resume_download(url, file_path):
     # try:
     # 第一次请求是为了得到文件总大小
