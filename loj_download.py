@@ -65,9 +65,9 @@ def get_problem(protocol, host, pid):
         return f'{pid}没有该题'
     
     title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
-    
+    title1 = re.sub(r'[\\/:*?"<>|]','-',title)  # 替换掉特殊字符
     # 题目文件夹：“题号+标题”
-    problem_path = os.path.join(DOWNLOAD_PATH, host,str(pid)+title)
+    problem_path = os.path.join(DOWNLOAD_PATH, host,str(pid) + title1)
     writer = create_writer(problem_path)
     for c in result['localizedContentsOfAllLocales']:
         content = ''
