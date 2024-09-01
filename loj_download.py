@@ -14,7 +14,7 @@ from tenacity import retry, stop_after_attempt, wait_random
 from loguru import logger
 
 from config import DOWNLOAD_PATH
-from util import create_writer, get_and_replace_images, ordered_yaml_dump, request_get, request_post, resume_download
+from util import create_writer, get_and_replace_images, log_while_last_retry, ordered_yaml_dump, request_get, request_post, resume_download
 
 packages.urllib3.disable_warnings()  # 去除警告信息
 
@@ -34,7 +34,7 @@ LanguageMap = {
 }
 
 
-@retry(stop=stop_after_attempt(5),wait=wait_random(1, 3),reraise=True)
+@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry,wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
 
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
