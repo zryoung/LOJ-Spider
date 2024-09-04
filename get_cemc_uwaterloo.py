@@ -4,7 +4,6 @@ import os
 
 from loguru import logger
 from util import request_get, resume_download
-from lxml import etree
 from bs4 import BeautifulSoup as bs
 from requests import packages
 from config import DOWNLOAD_PATH
