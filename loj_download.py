@@ -31,6 +31,7 @@ ScoreTypeMap = {
 LanguageMap = {
     "cpp": "cc",
     "python": "py",
+    "haskell": "hs",
 }
 
 
@@ -125,54 +126,57 @@ def get_problem(protocol, host, pid):
 
     rename = dict()
     if judge:
-        config = dict()
-        if judge.get("timeLimit"):
-            config["time"] = f'{judge["timeLimit"]}ms'
-        elif judge.get("checker").get("timeLimit"):
-            config["time"] = f'{judge["checker"]["timeLimit"]}ms'
-        if judge.get("memoryLimit"):
-            config["memory"] = f'{judge["memoryLimit"]}m'
-        elif judge.get("checker").get("memoryLimit"):
-            config["memory"] = f'{judge["checker"]["memoryLimit"]}m'
+        try:
+            config = dict()
+            if judge.get("timeLimit"):
+                config["time"] = f'{judge["timeLimit"]}ms'
+            elif judge.get("checker").get("timeLimit"):
+                config["time"] = f'{judge["checker"]["timeLimit"]}ms'
+            if judge.get("memoryLimit"):
+                config["memory"] = f'{judge["memoryLimit"]}m'
+            elif judge.get("checker").get("memoryLimit"):
+                config["memory"] = f'{judge["checker"]["memoryLimit"]}m'
 
-        if judge.get("extraSourceFiles"):
-            files = []
-            for key in judge["extraSourceFiles"]:
-                for file in judge["extraSourceFiles"][key]:
-                    files.append(file)
-            config["user_extra_files"] = files
-        if judge.get("checker") and judge["checker"]["type"] == "custom":
-            config["checker_type"] = "syzoj" if judge["checker"].get("interface") == "legacy" else judge["checker"]["interface"]
-            if LanguageMap[judge["checker"]["language"]]:
-                rename[judge["checker"]["filename"]] = f"chk.{LanguageMap[judge['checker']['language']]}"
-                config["checker"] = f"chk.{LanguageMap[judge['checker']['language']]}"
-            else:
-                config["checker"] = judge["checker"]["filename"]
-        if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
-            config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
+            if judge.get("extraSourceFiles"):
+                files = []
+                for key in judge["extraSourceFiles"]:
+                    for file in judge["extraSourceFiles"][key]:
+                        files.append(file)
+                config["user_extra_files"] = files
+            if judge.get("checker") and judge["checker"]["type"] == "custom":
+                config["checker_type"] = "syzoj" if judge["checker"].get("interface") == "legacy" else judge["checker"]["interface"]
+                if LanguageMap[judge["checker"]["language"]]:
+                    rename[judge["checker"]["filename"]] = f"chk.{LanguageMap[judge['checker']['language']]}"
+                    config["checker"] = f"chk.{LanguageMap[judge['checker']['language']]}"
+                else:
+                    config["checker"] = judge["checker"]["filename"]
+            if judge.get("fileIo") and judge["fileIo"].get("inputFilename"):
+                config["filename"] = judge["fileIo"]["inputFilename"].split(".")[0]
 
-        if judge.get("subtasks"):
-            config["subtasks"] = []
-            for subtask in judge["subtasks"]:
-                # current = OrderedDict()
-                current = dict()
-                if subtask.get("points"):
-                    current["score"] = subtask["points"]
-                current["type"] = ScoreTypeMap[subtask["scoringType"]]
-                # TODO:559,交互题，没有output,出错
-                # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
-                current["cases"] = []
-                current_case = []
-                for item in subtask.get("testcases", []):
-                    if "inputFile" in item:
-                        current["cases"].append({"input": item["inputFile"]})
-                    if "outputFile" in item:
-                        current["cases"].append({"output": item["outputFile"]})
-                
-                if subtask.get("dependencies"):
-                    current["if"] = subtask["dependencies"]
-                config["subtasks"].append(current)
-        writer('testdata/config.yaml', ordered_yaml_dump(config))
+            if judge.get("subtasks"):
+                config["subtasks"] = []
+                for subtask in judge["subtasks"]:
+                    # current = OrderedDict()
+                    current = dict()
+                    if subtask.get("points"):
+                        current["score"] = subtask["points"]
+                    current["type"] = ScoreTypeMap[subtask["scoringType"]]
+                    # TODO:559,交互题，没有output,出错
+                    # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
+                    current["cases"] = []
+                    current_case = []
+                    for item in subtask.get("testcases", []):
+                        if "inputFile" in item:
+                            current["cases"].append({"input": item["inputFile"]})
+                        if "outputFile" in item:
+                            current["cases"].append({"output": item["outputFile"]})
+                    
+                    if subtask.get("dependencies"):
+                        current["if"] = subtask["dependencies"]
+                    config["subtasks"].append(current)
+            writer('testdata/config.yaml', ordered_yaml_dump(config))
+        except Exception as e:
+            logger.error(f'\n{traceback.format_exc()}\n')
 
     # try:
 
