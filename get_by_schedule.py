@@ -80,6 +80,27 @@ def query_problem_set(skipCount, takeCount):
                 ).json()
 
 
+def get_latest_problem():
+    logger.info("获取最新题目")
+    list = request_get("https://api.loj.ac/api/homepage/getHomepage?locale=zh_CN", headers={
+        "Content-Type": "application/json",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+    }).json()["latestUpdatedProblems"]
+    # print(list)
+
+    for item in list:
+        interval_time = (time.time() - time.mktime(
+            time.strptime(item["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
+        if interval_time <= 24:  # 1小时内更新的题目
+            print("get new problem.", item["meta"]["displayId"])
+            try:
+                pid = item["meta"]["displayId"]
+                message = get_problem('https', 'loj.ac', pid)
+                logger.info(message)
+            except Exception as e:
+                logger.error(f'{pid},message:{e}')
+
+
 @catch_exceptions()
 def get_problem_from_list():
     pid = pid_list[0]
@@ -110,8 +131,14 @@ def run_by_schedule():
 if __name__ == '__main__':
     logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
     
-    with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
-        pid_list = json.load(f)
-    # print(pid_list)
-    logger.info(f'开始题号：{pid_list[0]}')
-    run_by_schedule()
+    # with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
+    #     pid_list = json.load(f)
+    # # print(pid_list)
+    # logger.info(f'开始题号：{pid_list[0]}')
+    # run_by_schedule()
+
+    schedule.every().day.at("16:13").do(get_latest_problem)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+    # get_latest_problem()
