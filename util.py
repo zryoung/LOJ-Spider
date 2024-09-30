@@ -129,6 +129,7 @@ def get_and_replace_images(content, picpath):
     # 后面的"230"不获取，不然导致下载url出错
     # ![example.png](https://img.loj.ac.cn/2024/09/06/bc7efceff875c.png "230")
     img_arr = re.findall(r'!\[.*?\]\((.*?) \".*?\"\)', content)
+    img_arr += re.findall(r'!\[.*?\]\((.*?)\)', content)
 
     if img_arr:
         os.makedirs(picpath, exist_ok=True)
