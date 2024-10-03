@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -154,3 +155,14 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 
     OrderedDumper.add_representer(dict, _dict_representer)
     return yaml.dump(data, stream, OrderedDumper, **kwds)
+
+def read_json_file(path):
+    # return json file
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json_file(path, mode, data):
+    # write json file
+    with open(path, mode, encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
