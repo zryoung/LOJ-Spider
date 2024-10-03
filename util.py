@@ -2,6 +2,7 @@ import json
 import os
 import re
 import sys
+import base64
 from urllib.parse import urlparse
 import requests
 from loguru import logger
@@ -166,3 +167,10 @@ def write_json_file(path, mode, data):
     # write json file
     with open(path, mode, encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def base64_to_img(bstr, file_path):
+    imgdata = base64.b64decode(bstr)
+    file = open(file_path, 'wb')
+    file.write(imgdata)
+    file.close()
