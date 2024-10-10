@@ -9,6 +9,7 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
+BASE64 = r"^data:\S+/(\S+);base64,?(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)){1}"
 
 def log_while_last_retry(retry_state):
     logger.error(retry_state.outcome.result())  # 打印原函数的返回值
