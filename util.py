@@ -1,12 +1,15 @@
+import json
 import os
 import re
 import sys
+import base64
 from urllib.parse import urlparse
 import requests
 from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
+BASE64 = r"^data:\S+/(\S+);base64,?(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)){1}"
 
 def log_while_last_retry(retry_state):
     logger.error(retry_state.outcome.result())  # 打印原函数的返回值
@@ -127,8 +130,8 @@ def get_and_replace_images(content, picpath):
     # TODO:以下修复可能不完善
     # 后面的"230"不获取，不然导致下载url出错
     # ![example.png](https://img.loj.ac.cn/2024/09/06/bc7efceff875c.png "230")
-    # img_arr = re.findall(r'!\[.*?\]\((.*?) \".*?\"\)', content)
-    img_arr = re.findall(r'!\[.*?\]\((.*?)\)', content)
+    img_arr = re.findall(r'!\[.*?\]\((.*?) \".*?\"\)', content)
+    img_arr += re.findall(r'!\[.*?\]\((.*?)\)', content)
 
     if img_arr:
         os.makedirs(picpath, exist_ok=True)
@@ -153,3 +156,21 @@ def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
 
     OrderedDumper.add_representer(dict, _dict_representer)
     return yaml.dump(data, stream, OrderedDumper, **kwds)
+
+def read_json_file(path):
+    # return json file
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json_file(path, mode, data):
+    # write json file
+    with open(path, mode, encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def base64_to_img(bstr, file_path):
+    imgdata = base64.b64decode(bstr)
+    file = open(file_path, 'wb')
+    file.write(imgdata)
+    file.close()
