@@ -80,7 +80,7 @@ def query_problem_set(skipCount, takeCount):
                 ).json()
 
 
-def get_latest_problem():
+def get_latest_problem(int_time=24):
     logger.info("获取最新题目")
     list = request_get("https://api.loj.ac/api/homepage/getHomepage?locale=zh_CN", headers={
         "Content-Type": "application/json",
@@ -91,7 +91,7 @@ def get_latest_problem():
     for item in list:
         interval_time = (time.time() - time.mktime(
             time.strptime(item["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
-        if interval_time <= 24:  # 1小时内更新的题目
+        if interval_time <= int_time:  # 1小时内更新的题目
             print("get new problem.", item["meta"]["displayId"])
             try:
                 pid = item["meta"]["displayId"]
@@ -124,6 +124,7 @@ def run_by_schedule():
     # schedule.every().monday.do(job)
     # schedule.every().wednesday.at("13:15").do(job)
     # schedule.run_all()
+    
     while len(pid_list):
         schedule.run_pending()
         time.sleep(1)
@@ -137,7 +138,8 @@ if __name__ == '__main__':
     # logger.info(f'开始题号：{pid_list[0]}')
     # run_by_schedule()
 
-    schedule.every().day.at("16:13").do(get_latest_problem)
+    get_latest_problem(96)
+    schedule.every().day.at("16:13").do(get_latest_problem, int_time=96)
     while True:
         schedule.run_pending()
         time.sleep(1)
