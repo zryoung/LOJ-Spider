@@ -39,31 +39,35 @@ def get_contest(hosts, prefix, problem_path, url):
                 data = row.find_all("td")
                 title = data[1].getText().strip()
                 year = data[2].getText().strip()
-                contest = data[4].find_all("a", attrs={"class":"btn btn-secondary"})[0].get('href')
-                contest_html = data[4].find_all("a", attrs={"class": "btn btn-outline-secondary"})[0].get('href')
                 # testdata = data[5].find_all("a", attrs={"download":"download"})[0].get('href')
-                testdata = data[5].find_all("a", attrs={"class":"btn btn-secondary"})[0].get('href')
-                solution_html = data[5].find_all("a", attrs={"class": "btn btn-outline-secondary"})[0].get('href')
                 new_path = os.path.join(problem_path, title, year)
                 os.makedirs(new_path, exist_ok=True)
                 # print(new_path + contest.split('/')[-1])
-                resume_download(hosts + contest, os.path.join(new_path, contest.split('/')[-1]))
-                resume_download(hosts + contest, os.path.join(new_path, contest_html.split('/')[-1]))
-                resume_download(hosts + contest, os.path.join(new_path, solution_html.split('/')[-1]))
-                resume_download(hosts + testdata, os.path.join(new_path, testdata.split('/')[-1]))
+                contest = data[4].find_all("a", attrs={"class":"btn btn-secondary"})[0].get('href')
+                if not contest.startswith("http"):
+                    contest_pdf_url = hosts + contest
+                else:
+                    contest_pdf_url = contest
+
+                testdata = data[5].find_all("a", attrs={"class":"btn btn-secondary"})[0].get('href')
+                if not testdata.startswith("http"):
+                    test_data_url = hosts + testdata
+                else:
+                    test_data_url = testdata
                 print(title, year, contest, testdata)
+                
+                resume_download(contest_pdf_url, os.path.join(new_path, contest.split('/')[-1]))
+                
+                resume_download(test_data_url, os.path.join(new_path, testdata.split('/')[-1]))
+                # contest_html = data[4].find_all("a", attrs={"class": "btn btn-outline-secondary"})[0].get('href')
+                # resume_download(hosts + contest, os.path.join(new_path, contest_html.split('/')[-1]))
+                # solution_html = data[5].find_all("a", attrs={"class": "btn btn-outline-secondary"})[0].get('href')
+                # resume_download(hosts + contest, os.path.join(new_path, solution_html.split('/')[-1]))
+                
             except Exception as e:
                 logger.error(e)
         
-        try:
-            # 下一页
-            url = prefix + soup.find("a", attrs={"class":"page-link align-items-center", "rel":"next"}).get('href')
-            print(url)
-            get_contest(url)
-        except Exception as e:
-            url = ''
-            return
-        # print(url)
+
 
 if __name__ == '__main__':
     hosts = 'https://cemc.uwaterloo.ca/'
@@ -73,10 +77,17 @@ if __name__ == '__main__':
     problem_path = os.path.join(DOWNLOAD_PATH, host)
     os.makedirs(problem_path, exist_ok=True)
 
+    # 调试下载文件
+    # resume_download(
+    #      "https://s3.amazonaws.com/cemc.drupal/documents/bigfiles/2020CCCSeniorTestData.zip",
+    #      os.path.join(problem_path, r"Canadian Computing Competition Senior\2020", "2020CCCSeniorTestData.zip")
+    #      )
+
     # get CCC J/S
     contest_category = 29
-    url = f"https://cemc.uwaterloo.ca/views/ajax?academic_year=All&{contest_category=}&view_name=listing&view_display_id=past_contest"
-    get_contest(hosts, prefix, problem_path, url)
+    for page in range(3):
+        url = f"https://cemc.uwaterloo.ca/views/ajax?academic_year=All&{contest_category=}&view_name=listing&view_display_id=past_contest&{page=}"
+        get_contest(hosts, prefix, problem_path, url)
 
     # get CCO
     contest_category= 80
