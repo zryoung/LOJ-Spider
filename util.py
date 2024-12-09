@@ -45,7 +45,7 @@ def request_get(url, params=None, headers=None, stream=False,verify=False, timeo
 def resume_download(url, file_path):
     # try:
     # 第一次请求是为了得到文件总大小
-    r1 = request_get(url, stream=True, verify=False)
+    r1 = requests.head(url, stream=True, verify=False)
     # 有些文件没有conteng-length这个信息
     if not r1.headers.get("Content-Length"):
         with open(file_path, 'ab') as file:
@@ -61,7 +61,12 @@ def resume_download(url, file_path):
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         temp_size = 0
 
-    if temp_size >= total_size:
+    # print(f"{temp_size=}\t{total_size=}\t剩余：{total_size-temp_size}")
+
+    if temp_size > total_size:
+        os.remove(file_path)
+        temp_size = 0
+    elif temp_size == total_size:
         return
     # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
     headers = {"Range": f"bytes={temp_size}-"}
@@ -81,17 +86,6 @@ def resume_download(url, file_path):
                 )
                 sys.stdout.flush()
     print()  # 避免上面\r 回车符
-    # except Exception as e:
-    #     # data={
-    #     #     "time": time.localtime(),
-    #     #     "message":str(e),
-    #     #     "file": file_path,
-    #     #     "download_url":url
-    #     # }
-    #     # file_writer('fail.json', json.dumps(data, ensure_ascii=False))
-    #     logger.error(f'{file_path}出错重试.{e}')
-    #     raise Exception(f'{file_path}出错重试.{e}')
-    #     # print(f'Error:"message:"{e},"file:"{file_path},"url:"{url}')
 
 def file_writer(file_path, content):
     with open(file_path, 'a', encoding='utf-8') as file:
