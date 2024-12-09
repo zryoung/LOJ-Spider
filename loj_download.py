@@ -158,21 +158,24 @@ def get_problem(protocol, host, pid):
                 for subtask in judge["subtasks"]:
                     # current = OrderedDict()
                     current = dict()
-                    if subtask.get("points"):
-                        current["score"] = subtask["points"]
+                    # if subtask.get("points"):
+                    #     current["score"] = subtask["points"]
+                    current["score"] = subtask.get("points", 100)
                     current["type"] = ScoreTypeMap[subtask["scoringType"]]
                     # TODO:559,交互题，没有output,出错
                     # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
                     current["cases"] = []
                     current_case = []
-                    for item in subtask.get("testcases", []):
-                        if "inputFile" in item:
-                            current["cases"].append({"input": item["inputFile"]})
-                        if "outputFile" in item:
-                            current["cases"].append({"output": item["outputFile"]})
+                    # for item in subtask.get("testcases", []):
+                    #     if "inputFile" in item:
+                    #         current["cases"].append({"input": item["inputFile"]})
+                    #     if "outputFile" in item:
+                    #         current["cases"].append({"output": item["outputFile"]})
+                    current["cases"] =[{'input': i['inputFile'], 'output': i['outputFile']} for i in subtask.get("testcases", [])]
                     
-                    if subtask.get("dependencies"):
-                        current["if"] = subtask["dependencies"]
+                    # if subtask.get("dependencies"):
+                    #     current["if"] = subtask["dependencies"]
+                    current["if"] = subtask.get("dependencies", [])
                     config["subtasks"].append(current)
             writer('testdata/config.yaml', ordered_yaml_dump(config))
         except Exception as e:
@@ -314,7 +317,7 @@ if __name__ == "__main__":
     logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
 
     if len(sys.argv) < 2:
-        print("loj-download <url>")
+        print("py loj_download.py <url>") # py loj_download.py https://loj.ac/p/4758..4758
     else:
         try:
             run(sys.argv[1])
