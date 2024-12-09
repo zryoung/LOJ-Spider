@@ -129,11 +129,11 @@ def get_problem(protocol, host, pid):
         try:
             config = dict()
             if judge.get("timeLimit"):
-                config["time"] = f'{judge["timeLimit"]}ms'
+                config["time"] = f'{judge.get("timeLimit", 1000)}ms'
             elif judge.get("checker").get("timeLimit"):
                 config["time"] = f'{judge["checker"]["timeLimit"]}ms'
             if judge.get("memoryLimit"):
-                config["memory"] = f'{judge["memoryLimit"]}m'
+                config["memory"] = f'{judge.get("memoryLimit", 256)}m'
             elif judge.get("checker").get("memoryLimit"):
                 config["memory"] = f'{judge["checker"]["memoryLimit"]}m'
 
