@@ -81,7 +81,7 @@ def query_problem_set(skipCount, takeCount):
 
 
 def get_latest_problem(int_time=24):
-    logger.info("获取最新题目")
+    logger.info(f"获取最新题目({int_time}小时内)")
     list = request_get("https://api.loj.ac/api/homepage/getHomepage?locale=zh_CN", headers={
         "Content-Type": "application/json",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
