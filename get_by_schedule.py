@@ -138,8 +138,12 @@ if __name__ == '__main__':
     # logger.info(f'开始题号：{pid_list[0]}')
     # run_by_schedule()
 
-    get_latest_problem(96)
-    schedule.every().day.at("16:13").do(get_latest_problem, int_time=96)
+    int_time = 24 #默认爬取24小时内题目
+    if len(sys.argv)==2:
+        int_time = int(sys.argv[1]) #运行参数设置最新题目时间段
+    # print(int_time)
+    get_latest_problem(int_time)
+    schedule.every().day.at("16:13").do(get_latest_problem, int_time=int_time)
     while True:
         schedule.run_pending()
         time.sleep(1)
