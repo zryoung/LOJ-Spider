@@ -3,64 +3,25 @@ import os
 import re
 import threading
 import zipfile
+from loguru import logger as log
+from config import DOWNLOAD_PATH_USACO
 
 import html2text
 from requests import *
 from util import request_get, request_post, resume_download, get_and_replace_images, get_filename_and_extension
 
-domain = r'http://www.usaco.org/'
-work_dir = r'd:/usaco1/'
+packages.urllib3.disable_warnings()  # 去除警告信息
+
+domain = r'https://usaco.org/'
+work_dir = DOWNLOAD_PATH_USACO + '/'
 debug_flag = True
-
-
-# def log(s):
-#     if debug_flag:
-#         print(s)
-
-
-# def log_error(s):
-#     print(s)
-
-
-# class Worker(threading.Thread):
-#     def __init__(self, q):
-#         threading.Thread.__init__(self)
-#         self.queue = q
-
-#     def run(self):
-#         while True:
-#             if self.queue.empty():
-#                 break
-
-
-# def request_get(url):
-#     headers = {
-#         "Content-Type": "application/json",
-#         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-#                       "Chrome/96.0.4664.110 Safari/537.36 Edg/96.0.1054.62 "
-#     }
-#     try_times = 3  # 重试的次数
-#     response = None
-#     for i in range(try_times):
-#         try:
-#             response = get(url, headers=headers, verify=False, proxies=None, timeout=5)
-#             # 注意此处也可能是302等状态码
-#             if response.status_code == 200:
-#                 response.close()
-#                 return response.text
-#         except Exception as e:
-#             # logdebug(f'requests failed {i}time')
-#             log_error(f'requests failed {i + 1} time,ERROR: {e},, 涉及题目：{url}')
-#     if response:
-#         response.close()
-#     return ''
 
 
 def get_contest_list():
     html = request_get(domain + "index.php?page=contests").text
     pattern = r'<a href="(.*?results)">.*?</a>'
     links = re.findall(pattern, html, re.M)
-    # log(len(link_list))
+    # log.info(len(link_list))
     _url_list = []
     for _url in links:
         _url_list.append(domain + _url)
@@ -84,24 +45,18 @@ def get_contest_medal_list(_url):
     _match = re.finditer(pattern, html)
     _pos = []
     lst = re.finditer(pattern1, html, re.M | re.S)
-    # log(lst)
-    # pattern1 = re.compile(r"<div style:'position:relative;float:right;'>"
-    #                       r"<b>(.*?)</b>.*?"
-    #                       r"<a href='(.*?)'>View problem</a>.*?"
-    #                       r"<a href='(.*?)'>Test data</a>.*?"
-    #                       r"<a href='(.*?)'>Solution</a>")
-    # lst = pattern1.findall(html, 4000)
+
     for item in _match:
-        log(item.group(1))
-        log(item.span())
+        log.info(item.group(1))
+        log.info(item.span())
         _pos.append((item.group(1), item.start()))
     _pos.append(('END', len(html)))
-    # log(_pos)
+    # log.info(_pos)
     i = 0
     _ret_list = []
     for item in lst:
-        log(item.group(1))
-        log(item.span())
+        log.info(item.group(1))
+        log.info(item.span())
         if _pos[i][1] < item.start() < _pos[i + 1][1]:
             pass
         else:
@@ -127,7 +82,7 @@ def get_description(_url):
     html = request_get(_url).text
     pattern = r'<h2>(.*?)</h2>'
     medal_title = re.findall(pattern, html)
-    log(medal_title)
+    log.info(medal_title)
 
     desc_en = get_description_by_lang(_url, medal_title)
     desc_zh = get_description_by_lang(_url + '&lang=zh', medal_title)
@@ -163,19 +118,15 @@ def get_description_by_lang(url, medal_title):
 
 def get_data(url, directory):
     file_name = url.split('/')[-1]
-    html = get(url, stream=True)
-    if not os.path.exists(directory):
-        os.mkdir(directory)
-    with open(directory + file_name, 'wb') as f:
-        for chunk in html.iter_content(chunk_size=1024):
-            if chunk:
-                f.write(chunk)
+    resume_download(url, directory + file_name)
+
+
     try:
         # 解压
         with zipfile.ZipFile(directory + file_name) as zf:
             zf.extractall(directory)
     except Exception as _e:
-        log_error(f'解压出错：{_e}, 涉及题目：{url}')
+        log.error(f'解压出错：{_e}, 涉及题目：{url}')
     else:
         os.remove(directory + file_name)
 
@@ -191,11 +142,11 @@ def get_solution(url):
 
 def get_all(u_list):
     # url_list = get_contest_list()
-    # log(url_list)
+    # log.info(url_list)
     # 测试
     for url in u_list:
         link_list = get_contest_medal_list(url)
-        log(link_list)
+        log.info(link_list)
         i = 0
         for link in link_list:
             i += 1
@@ -211,13 +162,13 @@ def get_all(u_list):
 
 def get_one(directory, title, description, data, solution):
     try:
-        # log(prob_directory_name)
+        # log.info(prob_directory_name)
         if not os.path.exists(directory):
             os.mkdir(directory)
 
         # 写入problem.yaml
         yaml_file_name = directory + '/problem.yaml'
-        # log(yaml_file_name)
+        # log.info(yaml_file_name)
         with open(yaml_file_name, 'w', encoding='utf-8') as f:
             f.write(title)
 
@@ -242,14 +193,15 @@ def get_one(directory, title, description, data, solution):
         # with open(test_data_dir + '/config.yaml', 'w') as f:
         #     f.write('')
     except Exception as e:
-        log_error(f'Fail:{e}, 涉及题目：{title}')
+        log.error(f'Fail:{e}, 涉及题目：{title}')
 
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    log.add(os.path.join(work_dir, 'log_usaco.txt'))
     # pass
-    # url_list =['http://www.usaco.org/index.php?page=feb22results']
-    url_list = ['https://usaco.org/index.php?page=open24results', 'https://usaco.org/index.php?page=feb24results']
+    url_list =['https://usaco.org/index.php?page=dec24results']
+    # url_list = ['https://usaco.org/index.php?page=open24results', 'https://usaco.org/index.php?page=feb24results']
     get_all(url_list)
     # url = get_contest_medal_list('http://www.usaco.org/index.php?page=open19results')
 
