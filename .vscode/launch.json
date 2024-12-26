@@ -11,7 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": [
-                "https://loj.ac/p/3079..3079"
+                // "https://loj.ac/p/3079..3079",
+                // "96",  #获取n小时内题目
             ]
         }
     ]

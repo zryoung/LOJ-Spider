@@ -2,6 +2,7 @@ import json
 import os
 import re
 import threading
+from urllib.parse import urlparse
 import zipfile
 from loguru import logger as log
 from config import DOWNLOAD_PATH_USACO
@@ -145,6 +146,7 @@ def get_all(u_list):
     # log.info(url_list)
     # 测试
     for url in u_list:
+        host = urlparse(url).scheme + "://" + urlparse(url).hostname + '/'
         link_list = get_contest_medal_list(url)
         log.debug(link_list)
         i = 0
@@ -154,9 +156,9 @@ def get_all(u_list):
             prob_directory_name = prob_name + str(i)
             prob_directory_name = work_dir + prob_directory_name
             title = 'title: 「' + prob_name + '」' + link['title'] + '\n'
-            description = get_description(domain + link['description'])
-            solution = get_solution(domain + link['solution'])
-            data = domain + link['data']
+            description = get_description(host + link['description'])
+            solution = get_solution(host + link['solution'])
+            data = host + link['data']
             get_one(prob_directory_name, title, description, data, solution)
 
 
@@ -173,12 +175,18 @@ def get_one(directory, title, description, data, solution):
             f.write(title)
 
         # 写入problem.md
-        md_file_name = directory + '/problem.md'
-        with open(md_file_name, 'w', encoding='utf-8') as f:
-            f.write(description)
+        # md_file_name = directory + '/problem.md'
+        # with open(md_file_name, 'w', encoding='utf-8') as f:
+        #     f.write(description)
+        description = json.loads(description)
+        for k, v in description.items():
+            md_file_name = f'{directory}/problem_{k}.md'
+            with open(md_file_name, 'w', encoding='utf-8') as f:
+                f.write(v)
 
         # 写入solution.md
-        sol_file_name = directory + '/solution.md'
+        os.makedirs(directory + '/solution/', exist_ok=True)
+        sol_file_name = directory + '/solution/solution.md'
 
         with open(sol_file_name, 'w', encoding='utf-8') as f:
             f.write(solution)

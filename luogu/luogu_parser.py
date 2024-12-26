@@ -57,48 +57,53 @@ def problem_markdown_parser(dict: dict, path):
         # remove the head and tail \n
         content = content.lstrip("\n").rstrip("\n")
         return content
-    # if not os.path.exists(os.path.join(path, 'problem_zh.md')):
+    if not os.path.exists(os.path.join(path, 'problem_zh.md')):
         # with open(os.path.join(path, pid + "-" + title + ".md"), "a", encoding="utf-8") as f:
-    with open(os.path.join(path, "problem_zh.md"), "w", encoding="utf-8") as f:
-        f.write("# " + title + "\n\n")
-        if dict.get("background") != None:
-            f.write("## " + translation["background"] + "\n\n")
-            f.write(content_parser(dict["background"]) + "\n\n")
-        if dict.get("description") != None:
-            f.write("## " + translation["description"] + "\n\n")
-            f.write(content_parser(dict["description"]) + "\n\n")
-        if dict.get("inputFormat") != None:
-            f.write("## " + translation["inputFormat"] + "\n\n")
-            f.write(content_parser(dict["inputFormat"]) + "\n\n")
-        if dict.get("outputFormat") != None:
-            f.write("## " + translation["outputFormat"] + "\n\n")
-            f.write(content_parser(dict["outputFormat"]) + "\n\n")
-        # if dict["translation"] != "":
-        if dict.get("translation") != None:
-            f.write("## " + translation["translation"] + "\n\n")
-            f.write(content_parser(dict["translation"]) + "\n\n")
-        if dict["samples"] != []:
-            i = 1
-            for sample in dict["samples"]:
-                # f.write("## " + translation["samples"] + " #" + str(i) + "\n\n")
-                # f.write("### " + "样例输入" + " #" + str(i) + "\n\n")
-                f.write(f"```input{str(i)}\n")
-                f.write(content_parser(sample[0]))
-                f.write("\n```\n\n")
-                # f.write("### " + "样例输出" + " #" + str(i) + "\n\n")
-                f.write(f"```output{str(i)}\n")
-                f.write(content_parser(sample[1]))
-                f.write("\n```\n\n")
-                i += 1
-        if dict.get("hint") != None:
-            f.write("## " + translation["hint"] + "\n\n")
-            f.write(content_parser(dict["hint"]))
+        with open(os.path.join(path, "problem_zh.md"), "w", encoding="utf-8") as f:
+            f.write("# " + title + "\n\n")
+            if dict.get("background") != None:
+                f.write("## " + translation["background"] + "\n\n")
+                f.write(content_parser(dict["background"]) + "\n\n")
+            if dict.get("description") != None:
+                f.write("## " + translation["description"] + "\n\n")
+                f.write(content_parser(dict["description"]) + "\n\n")
+            if dict.get("inputFormat") != None:
+                f.write("## " + translation["inputFormat"] + "\n\n")
+                f.write(content_parser(dict["inputFormat"]) + "\n\n")
+            if dict.get("outputFormat") != None:
+                f.write("## " + translation["outputFormat"] + "\n\n")
+                f.write(content_parser(dict["outputFormat"]) + "\n\n")
+            # if dict["translation"] != "":
+            if dict.get("translation") != None:
+                f.write("## " + translation["translation"] + "\n\n")
+                f.write(content_parser(dict["translation"]) + "\n\n")
+            if dict["samples"] != []:
+                i = 1
+                for sample in dict["samples"]:
+                    # f.write("## " + translation["samples"] + " #" + str(i) + "\n\n")
+                    # f.write("### " + "样例输入" + " #" + str(i) + "\n\n")
+                    f.write(f"```input{str(i)}\n")
+                    f.write(content_parser(sample[0]))
+                    f.write("\n```\n\n")
+                    # f.write("### " + "样例输出" + " #" + str(i) + "\n\n")
+                    f.write(f"```output{str(i)}\n")
+                    f.write(content_parser(sample[1]))
+                    f.write("\n```\n\n")
+                    i += 1
+            if dict.get("hint") != None:
+                f.write("## " + translation["hint"] + "\n\n")
+                f.write(content_parser(dict["hint"]))
     
     if not os.path.exists(os.path.join(path, 'testdata/config.yaml')):
         os.makedirs(os.path.join(path, 'testdata'), exist_ok=True)
         with open(os.path.join(path, 'testdata/config.yaml'), "w", encoding="utf-8") as f:
-            f.write(f"time: {dict['limits']['time'][0]}ms\n")
+            f.write(f"time: {dict['limits']['time'][0]}ms\n")  #TODO 原始数组是按测试点设置时间和内存限制的，未来可增加此项
             f.write(f"memory: {dict['limits']['memory'][0] // 1024}m\n")
+    if not os.path.exists(os.path.join(path, 'problem.yaml')):
+        os.makedirs(path, exist_ok=True)
+        with open(os.path.join(path, 'problem.yaml'), 'w', encoding='utf-8') as f:
+            f.write(f"title: {dict['title']}\n")
+            f.write(f"owner: 2")
 
 
 def solution_markdown_parser(n_path, js):
@@ -153,7 +158,7 @@ def pid_parser(pid: str, path):
         'Host': 'www.luogu.com.cn',
         'Connection': 'keep-alive',
         # 'Cookie': '__client_id=ca02d46480bf42032e4d99e690eec5e887a5228c; _uid=630003'
-        'Cookie': LUOGU_COOKIE
+        'Cookie': LUOGU_COOKIE,
     }
     problem_url = "https://www.luogu.com.cn/problem/"
     solution_url = "https://www.luogu.com.cn/problem/solution/"
@@ -167,13 +172,14 @@ def pid_parser(pid: str, path):
         problem_js = json.loads(problem_rsp.text)["currentData"]["problem"]
         problem_markdown_parser(problem_js, path=n_path)
 
+        # TODO:题解需要登录信息，怎么上传？
         solution_rsp = requests.get(solution_url + pid + "?_contentOnly=1", headers=headers)
         
-        soup = bs.BeautifulSoup(solution_rsp.text, "html.parser")
-        script = soup.find(id="lentille-context").string
+        # soup = bs.BeautifulSoup(solution_rsp.text, "html.parser")
+        # script = soup.find(id="lentille-context").string
         
-        js = json.loads(script)
-        solution_markdown_parser(n_path, js)
+        # js = json.loads(script)
+        # solution_markdown_parser(n_path, js)
 
     except Exception as e:
         logger.error(f"Error: pid={pid} reason:{e}")
@@ -197,15 +203,19 @@ if __name__ == "__main__":
     # pid_parser("AT_yuha_c88_h", path=path)
 
     # 批量下载
-    # data = read_json_file(os.path.join(DOWNLOAD_PATH, 'at_pid_list.json'))
-    # for item in data:
-    #     pid_parser(item[0], path=path)
-    #     time.sleep(10)
+    # pb_list = read_json_file(os.path.join(DOWNLOAD_PATH, 'at_pid_list.json'))
+    # data = [("At_arc185_a",),("At_arc185_b",),("At_arc185_c",),("At_arc185_d",),("At_arc185_e",)]
+    # pb_list = ["P11361","P11362","P11363","P11364"]
+    pb_list = [(f"At_abc{x}_{chr(t+97)}",) for x in range(385,386) for t in range(0,7)]
+    for item in pb_list:
+        # print(item)
+        pid_parser(item[0], path=path)
+        time.sleep(10)
 
     # 错误列表重新下载
-    with open(os.path.join(DOWNLOAD_PATH, 'fail0.txt'), 'r', encoding='utf-8') as f:
-        data = f.readlines()
+    # with open(os.path.join(DOWNLOAD_PATH, 'fail0.txt'), 'r', encoding='utf-8') as f:
+    #     data = f.readlines()
     
-    for item in data:
-        pid_parser(item.strip(), path=path)
-        time.sleep(10)
+    # for item in data:
+    #     pid_parser(item.strip(), path=path)
+    #     time.sleep(10)

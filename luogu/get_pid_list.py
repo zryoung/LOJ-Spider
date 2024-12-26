@@ -27,7 +27,7 @@ def get_problem_list(page=1):
 
 if __name__ == '__main__':
     data = []
-    for page in range(1,123):
+    for page in range(1,125):
         # data += get_problem_list(page)
         print(f'page {page}')
         data.extend(get_problem_list(page))
