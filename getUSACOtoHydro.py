@@ -21,7 +21,7 @@ def get_contest_list():
     html = request_get(domain + "index.php?page=contests").text
     pattern = r'<a href="(.*?results)">.*?</a>'
     links = re.findall(pattern, html, re.M)
-    # log.info(len(link_list))
+    # log.debug(len(link_list))
     _url_list = []
     for _url in links:
         _url_list.append(domain + _url)
@@ -47,16 +47,16 @@ def get_contest_medal_list(_url):
     lst = re.finditer(pattern1, html, re.M | re.S)
 
     for item in _match:
-        log.info(item.group(1))
-        log.info(item.span())
+        log.debug(item.group(1))
+        log.debug(item.span())
         _pos.append((item.group(1), item.start()))
     _pos.append(('END', len(html)))
-    # log.info(_pos)
+    # log.debug(_pos)
     i = 0
     _ret_list = []
     for item in lst:
-        log.info(item.group(1))
-        log.info(item.span())
+        log.debug(item.group(1))
+        log.debug(item.span())
         if _pos[i][1] < item.start() < _pos[i + 1][1]:
             pass
         else:
@@ -146,7 +146,7 @@ def get_all(u_list):
     # 测试
     for url in u_list:
         link_list = get_contest_medal_list(url)
-        log.info(link_list)
+        log.debug(link_list)
         i = 0
         for link in link_list:
             i += 1
@@ -162,13 +162,13 @@ def get_all(u_list):
 
 def get_one(directory, title, description, data, solution):
     try:
-        # log.info(prob_directory_name)
+        # log.debug(prob_directory_name)
         if not os.path.exists(directory):
             os.mkdir(directory)
 
         # 写入problem.yaml
         yaml_file_name = directory + '/problem.yaml'
-        # log.info(yaml_file_name)
+        # log.debug(yaml_file_name)
         with open(yaml_file_name, 'w', encoding='utf-8') as f:
             f.write(title)
 
