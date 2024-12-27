@@ -220,7 +220,7 @@ def get_one(directory, title, description, data, solution):
 
         # 写入config.yaml
         with open(test_data_dir + '/config.yaml', 'w') as f:
-            f.write(f"time: {1000}ms\n")  #TODO 原始数组是按测试点设置时间和内存限制的，未来可增加此项
+            f.write(f"time: {2000}ms\n")  #TODO 原始数组是按测试点设置时间和内存限制的，未来可增加此项
             f.write(f"memory: {256}m\n")
     except Exception as e:
         log.error(f'Fail:{e}, 涉及题目：{title}')
