@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 import zipfile
 from loguru import logger as log
 from config import DOWNLOAD_PATH_USACO
+from markdownify import markdownify as md
+from markdownify import MarkdownConverter
 
 import html2text
 from requests import *
@@ -36,7 +38,8 @@ def get_contest_medal_list(_url):
     :return: medal：级别，title:标题，description：描述，data：数据，solution：题解
     """
     html = request_get(_url).text
-    pattern1 = r"<div style:'position:relative;float:right;'>" \
+    pattern1 = r"<h1 style='display:inline;'>(.*?)</h1>.*?" \
+               r"<div style:'position:relative;float:right;'>" \
                r"<b>(.*?)</b>.*?" \
                r"<a href='(.*?)'>View problem</a>.*?" \
                r"<a href='(.*?)'>Test data</a>.*?" \
@@ -63,11 +66,12 @@ def get_contest_medal_list(_url):
         else:
             i += 1
         _problem = dict()
+        _problem['id'] = item[1]
         _problem['medal'] = _pos[i][0]
-        _problem['title'] = item[1]
-        _problem['description'] = item[2]
-        _problem['data'] = item[3]
-        _problem['solution'] = item[4]
+        _problem['title'] = item[2]
+        _problem['description'] = item[3]
+        _problem['data'] = item[4]
+        _problem['solution'] = item[5]
         _ret_list.append(_problem)
 
     return _ret_list
@@ -109,12 +113,23 @@ def get_description_by_lang(url, medal_title):
     description = re.findall(pattern, html, re.M | re.S)
 
     description = ''.join(description)
+    description = description.replace('\r', '')
     # description = del_html(description)
-    description = html2text.html2text(description)
+    # description = md(description, wrap_width=80)
+    description = html2md(description)
+    description = description.replace('#### ', '## ')
     description = '## 题目描述\n' + description
-    description = description + '\n## Source:\n\nFrom:' + ''.join(medal_title)
+    description = description.strip()
+    description = description + '\n## Source:\nFrom:' + ''.join(medal_title)
 
     return description
+
+class CustomMarkdownConverter(MarkdownConverter):
+    def convert_pre(self, el, text, convert_as_inline):
+        return f'```{text}```'
+
+def html2md(html):
+    return CustomMarkdownConverter().convert(html)
 
 
 def get_data(url, directory):
@@ -136,7 +151,7 @@ def get_solution(url):
     html = request_get(url).text
 
     # txt = del_html(html)
-    txt = html2text.html2text(html)
+    txt = html2md(html)
 
     return txt
 
@@ -152,10 +167,14 @@ def get_all(u_list):
         i = 0
         for link in link_list:
             i += 1
-            prob_name = link['medal'].replace(',', '').replace(' ', '')
-            prob_directory_name = prob_name + str(i)
+            prob_name = link['medal'].replace('December Contest', 'Dec')
+            prob_name = prob_name.replace('January Contest', 'Jan')
+            prob_name = prob_name.replace('February Contest', 'Feb')
+            prob_name = prob_name.replace('USOpen Contest', 'Open')
+            prob_name = prob_name.replace(',', '').replace(' ', '')
+            prob_directory_name = prob_name + link['id']
             prob_directory_name = work_dir + prob_directory_name
-            title = 'title: 「' + prob_name + '」' + link['title'] + '\n'
+            title = f'title: 「{prob_name}」 {link["id"]} {link["title"]}'
             description = get_description(host + link['description'])
             solution = get_solution(host + link['solution'])
             data = host + link['data']
@@ -172,14 +191,16 @@ def get_one(directory, title, description, data, solution):
         yaml_file_name = directory + '/problem.yaml'
         # log.debug(yaml_file_name)
         with open(yaml_file_name, 'w', encoding='utf-8') as f:
-            f.write(title)
+            f.write(title + '\n')
+            f.write('tag: \n')
+            f.write('  - USACO\n')
 
         # 写入problem.md
         # md_file_name = directory + '/problem.md'
         # with open(md_file_name, 'w', encoding='utf-8') as f:
         #     f.write(description)
         description = json.loads(description)
-        for k, v in description.items():
+        for k, v in description.items(): # k:语言，v:描述
             md_file_name = f'{directory}/problem_{k}.md'
             with open(md_file_name, 'w', encoding='utf-8') as f:
                 f.write(v)
@@ -198,8 +219,9 @@ def get_one(directory, title, description, data, solution):
         get_data(data, test_data_dir)
 
         # 写入config.yaml
-        # with open(test_data_dir + '/config.yaml', 'w') as f:
-        #     f.write('')
+        with open(test_data_dir + '/config.yaml', 'w') as f:
+            f.write(f"time: {1000}ms\n")  #TODO 原始数组是按测试点设置时间和内存限制的，未来可增加此项
+            f.write(f"memory: {256}m\n")
     except Exception as e:
         log.error(f'Fail:{e}, 涉及题目：{title}')
 
