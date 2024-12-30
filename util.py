@@ -119,7 +119,7 @@ def get_filename_and_extension(url):
     extension = filename_with_extension.split('.')[-1]
     return filename, extension
 
-def get_and_replace_images(content, picpath):
+def get_and_replace_images(content, picpath, host=None):
         
     # TODO:以下修复可能不完善
     # 后面的"230"不获取，不然导致下载url出错
@@ -130,6 +130,12 @@ def get_and_replace_images(content, picpath):
     if img_arr:
         os.makedirs(picpath, exist_ok=True)
     for img_url in img_arr:
+        if not img_url.startswith('http'):
+            if host:
+                img_url = host + img_url
+            else:
+                logger.error(f'图片地址不完整：{img_url}')
+                continue
         filename, extension = get_filename_and_extension(url=img_url)
         pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
         try:
