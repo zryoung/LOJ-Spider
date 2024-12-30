@@ -77,7 +77,7 @@ def get_contest_medal_list(_url):
     return _ret_list
 
 
-def get_description(_url):
+def get_description(_url, picpath):
     """
     获取题目描述
     :param _url: 题目描述url
@@ -89,18 +89,18 @@ def get_description(_url):
     medal_title = re.findall(pattern, html)
     log.info(medal_title)
 
-    desc_en = get_description_by_lang(_url, medal_title)
-    desc_zh = get_description_by_lang(_url + '&lang=zh', medal_title)
-    desc_fr = get_description_by_lang(_url + '&lang=fr', medal_title)
-    desc_ru = get_description_by_lang(_url + '&lang=ru', medal_title)
-    desc_es = get_description_by_lang(_url + '&lang=es', medal_title)
+    desc_en = get_description_by_lang(_url, medal_title, picpath)
+    desc_zh = get_description_by_lang(_url + '&lang=zh', medal_title, picpath)
+    desc_fr = get_description_by_lang(_url + '&lang=fr', medal_title, picpath)
+    desc_ru = get_description_by_lang(_url + '&lang=ru', medal_title, picpath)
+    desc_es = get_description_by_lang(_url + '&lang=es', medal_title, picpath)
 
     problem = dict(en=desc_en, zh=desc_zh, fr=desc_fr, ru=desc_ru, es=desc_es)
 
     return json.dumps(problem)
 
 
-def get_description_by_lang(url, medal_title):
+def get_description_by_lang(url, medal_title, picpath):
     """
     按语言类型获取题面描述
     :param url: 题目描述url
@@ -117,6 +117,7 @@ def get_description_by_lang(url, medal_title):
     # description = del_html(description)
     # description = md(description, wrap_width=80)
     description = html2md(description)
+    description = get_and_replace_images(description, picpath, host=domain)
     description = description.replace('#### ', '## ')
     description = '## 题目描述\n' + description
     description = description.strip()
@@ -175,7 +176,7 @@ def get_all(u_list):
             prob_directory_name = prob_name + link['id']
             prob_directory_name = work_dir + prob_directory_name
             title = f'title: 「{prob_name}」 {link["id"]} {link["title"]}'
-            description = get_description(host + link['description'])
+            description = get_description(host + link['description'], f"{prob_directory_name}/additional_files/")
             solution = get_solution(host + link['solution'])
             data = host + link['data']
             get_one(prob_directory_name, title, description, data, solution)
@@ -195,10 +196,6 @@ def get_one(directory, title, description, data, solution):
             f.write('tag: \n')
             f.write('  - USACO\n')
 
-        # 写入problem.md
-        # md_file_name = directory + '/problem.md'
-        # with open(md_file_name, 'w', encoding='utf-8') as f:
-        #     f.write(description)
         description = json.loads(description)
         for k, v in description.items(): # k:语言，v:描述
             md_file_name = f'{directory}/problem_{k}.md'
@@ -240,7 +237,7 @@ if __name__ == '__main__':
     # prob_directory_name = prob_name + str(3)
     # prob_directory_name = work_dir + prob_directory_name
     # title = 'title: 「' + prob_name + '」Trapped in the Haybales (Gold)\n'
-    # description = get_description('http://www.usaco.org/index.php?page=viewproblem2&cpid=554')
+    # description = get_description('https://usaco.org/index.php?page=viewproblem2&cpid=1444', r'D:\usaco1\USACO2024DecBronze2\additional_files')
     # solution = get_solution('http://www.usaco.org/current/data/sol_trapped_gold.html')
     # data = 'http://www.usaco.org/current/data/trapped_gold.zip'
     # get_one(prob_directory_name, title, description, data, solution)
