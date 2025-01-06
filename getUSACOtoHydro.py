@@ -44,10 +44,11 @@ def get_contest_medal_list(_url):
                r"<a href='(.*?)'>View problem</a>.*?" \
                r"<a href='(.*?)'>Test data</a>.*?" \
                r"<a href='(.*?)'>Solution</a>"
-
-    pattern = r'<h2><img.*?>(.*?)</h2>'
+    
+    pattern = r'<h2>.*?(USACO .*?)</h2>'
     _match = re.finditer(pattern, html)
     _pos = []
+
     lst = re.finditer(pattern1, html, re.M | re.S)
 
     for item in _match:
@@ -68,6 +69,7 @@ def get_contest_medal_list(_url):
         _problem = dict()
         _problem['id'] = item[1]
         _problem['medal'] = _pos[i][0]
+        # _problem['medal'] = item[1]
         _problem['title'] = item[2]
         _problem['description'] = item[3]
         _problem['data'] = item[4]
@@ -89,13 +91,21 @@ def get_description(_url, picpath):
     medal_title = re.findall(pattern, html)
     log.info(medal_title)
 
-    desc_en = get_description_by_lang(_url, medal_title, picpath)
-    desc_zh = get_description_by_lang(_url + '&lang=zh', medal_title, picpath)
-    desc_fr = get_description_by_lang(_url + '&lang=fr', medal_title, picpath)
-    desc_ru = get_description_by_lang(_url + '&lang=ru', medal_title, picpath)
-    desc_es = get_description_by_lang(_url + '&lang=es', medal_title, picpath)
+    pattern_lang = r"<option value='(.*?)'.*?>.*?</option>"
+    lang_list = re.findall(pattern_lang, html)
+    problem = dict()
+    for lang in lang_list:
+        log.debug(lang)
+        problem[lang] = get_description_by_lang(f"{_url}&lang={lang}", medal_title, picpath)
 
-    problem = dict(en=desc_en, zh=desc_zh, fr=desc_fr, ru=desc_ru, es=desc_es)
+
+    # desc_en = get_description_by_lang(_url, medal_title, picpath)
+    # desc_zh = get_description_by_lang(_url + '&lang=zh', medal_title, picpath)
+    # desc_fr = get_description_by_lang(_url + '&lang=fr', medal_title, picpath)
+    # desc_ru = get_description_by_lang(_url + '&lang=ru', medal_title, picpath)
+    # desc_es = get_description_by_lang(_url + '&lang=es', medal_title, picpath)
+
+    # problem = dict(en=desc_en, zh=desc_zh, fr=desc_fr, ru=desc_ru, es=desc_es)
 
     return json.dumps(problem)
 
@@ -169,9 +179,10 @@ def get_all(u_list):
         for link in link_list:
             i += 1
             prob_name = link['medal'].replace('December Contest', 'Dec')
+            prob_name = prob_name.replace('November Contest', 'Nov')
             prob_name = prob_name.replace('January Contest', 'Jan')
             prob_name = prob_name.replace('February Contest', 'Feb')
-            prob_name = prob_name.replace('USOpen Contest', 'Open')
+            prob_name = prob_name.replace('US Open Contest', 'Open')
             prob_name = prob_name.replace(',', '').replace(' ', '')
             prob_directory_name = prob_name + link['id']
             prob_directory_name = work_dir + prob_directory_name
@@ -227,8 +238,27 @@ def get_one(directory, title, description, data, solution):
 if __name__ == '__main__':
     log.add(os.path.join(work_dir, 'log_usaco.txt'))
     # pass
-    url_list =['https://usaco.org/index.php?page=dec24results']
-    # url_list = ['https://usaco.org/index.php?page=open24results', 'https://usaco.org/index.php?page=feb24results']
+    url_list =[
+        'https://usaco.org/index.php?page=nov11problems', 
+        'https://usaco.org/index.php?page=dec11problems',
+        'https://usaco.org/index.php?page=jan12problems',
+        'https://usaco.org/index.php?page=feb12problems',
+        'https://usaco.org/index.php?page=mar12problems',
+        'https://usaco.org/index.php?page=open12problems',
+        'https://usaco.org/index.php?page=nov12problems',
+        'https://usaco.org/index.php?page=dec12problems',
+        'https://usaco.org/index.php?page=jan13problems',
+        'https://usaco.org/index.php?page=feb13problems',
+        'https://usaco.org/index.php?page=mar13problems',
+        'https://usaco.org/index.php?page=open13problems',
+        'https://usaco.org/index.php?page=nov13problems',
+        'https://usaco.org/index.php?page=dec13problems',
+        'https://usaco.org/index.php?page=jan14problems',
+        'https://usaco.org/index.php?page=feb14problems',
+        'https://usaco.org/index.php?page=mar14problems',
+        'https://usaco.org/index.php?page=open14problems',
+    ]
+    # url_list = ['https://usaco.org/index.php?page=open24results']
     get_all(url_list)
     # url = get_contest_medal_list('http://www.usaco.org/index.php?page=open19results')
 
@@ -241,5 +271,6 @@ if __name__ == '__main__':
     # solution = get_solution('http://www.usaco.org/current/data/sol_trapped_gold.html')
     # data = 'http://www.usaco.org/current/data/trapped_gold.zip'
     # get_one(prob_directory_name, title, description, data, solution)
+
 
     pass
