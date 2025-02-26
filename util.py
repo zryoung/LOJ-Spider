@@ -56,8 +56,9 @@ def resume_download(url, file_path):
     r1 = requests.head(url, stream=True, verify=False)
     # 有些文件没有conteng-length这个信息
     if not r1.headers.get("Content-Length"):
+        r = requests.get(url, stream=True, verify=False)
         with open(file_path, 'ab') as file:
-            file.write(r1.content)
+            file.write(r.content)
         return
     
     total_size = int(r1.headers["Content-Length"])
