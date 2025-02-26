@@ -95,7 +95,7 @@ def get_description(_url, picpath):
     lang_list = re.findall(pattern_lang, html)
     problem = dict()
     for lang in lang_list:
-        log.debug(lang)
+        # log.debug(lang)
         problem[lang] = get_description_by_lang(f"{_url}&lang={lang}", medal_title, picpath)
 
 
@@ -239,26 +239,26 @@ if __name__ == '__main__':
     log.add(os.path.join(work_dir, 'log_usaco.txt'))
     # pass
     url_list =[
-        'https://usaco.org/index.php?page=nov11problems', 
-        'https://usaco.org/index.php?page=dec11problems',
-        'https://usaco.org/index.php?page=jan12problems',
-        'https://usaco.org/index.php?page=feb12problems',
-        'https://usaco.org/index.php?page=mar12problems',
-        'https://usaco.org/index.php?page=open12problems',
-        'https://usaco.org/index.php?page=nov12problems',
-        'https://usaco.org/index.php?page=dec12problems',
-        'https://usaco.org/index.php?page=jan13problems',
-        'https://usaco.org/index.php?page=feb13problems',
-        'https://usaco.org/index.php?page=mar13problems',
-        'https://usaco.org/index.php?page=open13problems',
-        'https://usaco.org/index.php?page=nov13problems',
-        'https://usaco.org/index.php?page=dec13problems',
-        'https://usaco.org/index.php?page=jan14problems',
-        'https://usaco.org/index.php?page=feb14problems',
-        'https://usaco.org/index.php?page=mar14problems',
-        'https://usaco.org/index.php?page=open14problems',
+        # 'https://usaco.org/index.php?page=nov11problems', 
+        # 'https://usaco.org/index.php?page=dec11problems',
+        # 'https://usaco.org/index.php?page=jan12problems',
+        # 'https://usaco.org/index.php?page=feb12problems',
+        # 'https://usaco.org/index.php?page=mar12problems',
+        # 'https://usaco.org/index.php?page=open12problems',
+        # 'https://usaco.org/index.php?page=nov12problems',
+        # 'https://usaco.org/index.php?page=dec12problems',
+        # 'https://usaco.org/index.php?page=jan13problems',
+        # 'https://usaco.org/index.php?page=feb13problems',
+        # 'https://usaco.org/index.php?page=mar13problems',
+        # 'https://usaco.org/index.php?page=open13problems',
+        # 'https://usaco.org/index.php?page=nov13problems',
+        # 'https://usaco.org/index.php?page=dec13problems',
+        # 'https://usaco.org/index.php?page=jan14problems',
+        # 'https://usaco.org/index.php?page=feb14problems',
+        # 'https://usaco.org/index.php?page=mar14problems',
+        # 'https://usaco.org/index.php?page=open14problems',
     ]
-    # url_list = ['https://usaco.org/index.php?page=open24results']
+    url_list = ['https://usaco.org/index.php?page=jan25results']
     get_all(url_list)
     # url = get_contest_medal_list('http://www.usaco.org/index.php?page=open19results')
 
