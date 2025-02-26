@@ -43,6 +43,14 @@ def request_get(url, params=None, headers=None, stream=False,verify=False, timeo
 
 @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
 def resume_download(url, file_path):
+    
+    # 这重要了，先看看本地文件下载了多少
+    if os.path.exists(file_path):
+        temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
+    else:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        temp_size = 0
+        
     # try:
     # 第一次请求是为了得到文件总大小
     r1 = requests.head(url, stream=True, verify=False)
@@ -54,12 +62,6 @@ def resume_download(url, file_path):
     
     total_size = int(r1.headers["Content-Length"])
 
-    # 这重要了，先看看本地文件下载了多少
-    if os.path.exists(file_path):
-        temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
-    else:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        temp_size = 0
 
     # print(f"{temp_size=}\t{total_size=}\t剩余：{total_size-temp_size}")
 
