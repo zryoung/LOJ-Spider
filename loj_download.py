@@ -165,13 +165,14 @@ def get_problem(protocol, host, pid):
                     # TODO:559,交互题，没有output,出错
                     # current["cases"] = [{"input": item["inputFile"], "output": item["outputFile"]} for item in subtask["testcases"]]
                     current["cases"] = []
-                    current_case = []
-                    # for item in subtask.get("testcases", []):
-                    #     if "inputFile" in item:
-                    #         current["cases"].append({"input": item["inputFile"]})
-                    #     if "outputFile" in item:
-                    #         current["cases"].append({"output": item["outputFile"]})
-                    current["cases"] =[{'input': i['inputFile'], 'output': i['outputFile']} for i in subtask.get("testcases", [])]
+                    for item in subtask.get("testcases", []):
+                        case = {}
+                        if "inputFile" in item:
+                            case["input"] = item["inputFile"]
+                        if "outputFile" in item:
+                            case["output"] = item["outputFile"]
+                        current["cases"].append(case)
+                    # current["cases"] =[{'input': i['inputFile'], 'output': i['outputFile']} for i in subtask.get("testcases", [])]
                     
                     # if subtask.get("dependencies"):
                     #     current["if"] = subtask["dependencies"]
