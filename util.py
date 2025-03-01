@@ -45,6 +45,7 @@ def request_get(url, params=None, headers=None, stream=False,verify=False, timeo
 
 @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
 def resume_download(url, file_path, num_chunks=4):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     downloader = Downloader(url, file_path, num_chunks)
     downloader.download()
     
