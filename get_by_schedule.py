@@ -143,7 +143,7 @@ if __name__ == '__main__':
         int_time = int(sys.argv[1]) #运行参数设置最新题目时间段
     # print(int_time)
     get_latest_problem(int_time)
-    schedule.every().day.at("16:13").do(get_latest_problem, int_time=int_time)
+    schedule.every(int_time).hours.do(get_latest_problem, int_time=int_time)
     while True:
         schedule.run_pending()
         time.sleep(1)
