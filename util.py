@@ -9,6 +9,8 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
+from downloader import Downloader
+
 BASE64 = r"^data:\S+/(\S+);base64,?(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)){1}"
 
 def log_while_last_retry(retry_state):
@@ -42,53 +44,59 @@ def request_get(url, params=None, headers=None, stream=False,verify=False, timeo
 
 
 @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
-def resume_download(url, file_path):
+def resume_download(url, file_path, num_chunks=4):
+    downloader = Downloader(url, file_path, num_chunks)
+    downloader.download()
     
-    # 这重要了，先看看本地文件下载了多少
-    if os.path.exists(file_path):
-        temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
-    else:
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        temp_size = 0
+
+# @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
+# def resume_download(url, file_path):
+    
+#     # 这重要了，先看看本地文件下载了多少
+#     if os.path.exists(file_path):
+#         temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
+#     else:
+#         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+#         temp_size = 0
         
-    # try:
-    # 第一次请求是为了得到文件总大小
-    r1 = requests.head(url, stream=True, verify=False)
-    # 有些文件没有conteng-length这个信息
-    if not r1.headers.get("Content-Length"):
-        r = requests.get(url, stream=True, verify=False)
-        with open(file_path, 'ab') as file:
-            file.write(r.content)
-        return
+#     # try:
+#     # 第一次请求是为了得到文件总大小
+#     r1 = requests.head(url, stream=True, verify=False)
+#     # 有些文件没有conteng-length这个信息
+#     if not r1.headers.get("Content-Length"):
+#         r = requests.get(url, stream=True, verify=False)
+#         with open(file_path, 'ab') as file:
+#             file.write(r.content)
+#         return
     
-    total_size = int(r1.headers["Content-Length"])
+#     total_size = int(r1.headers["Content-Length"])
 
 
-    # print(f"{temp_size=}\t{total_size=}\t剩余：{total_size-temp_size}")
+#     # print(f"{temp_size=}\t{total_size=}\t剩余：{total_size-temp_size}")
 
-    if temp_size > total_size:
-        os.remove(file_path)
-        temp_size = 0
-    elif temp_size == total_size:
-        return
-    # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
-    headers = {"Range": f"bytes={temp_size}-"}
-    res = request_get(url, stream=True, headers=headers,timeout=(6.1,21.1))
+#     if temp_size > total_size:
+#         os.remove(file_path)
+#         temp_size = 0
+#     elif temp_size == total_size:
+#         return
+#     # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
+#     headers = {"Range": f"bytes={temp_size}-"}
+#     res = request_get(url, stream=True, headers=headers,timeout=(6.1,21.1))
 
-    with open(file_path, "ab") as file:
-        for chunk in res.iter_content(chunk_size=1024):
-            if chunk:
-                temp_size += len(chunk)
-                file.write(chunk)
-                file.flush()
+#     with open(file_path, "ab") as file:
+#         for chunk in res.iter_content(chunk_size=1024):
+#             if chunk:
+#                 temp_size += len(chunk)
+#                 file.write(chunk)
+#                 file.flush()
 
-                ###这是下载实现进度显示####
-                done = int(50 * temp_size / total_size)
-                sys.stdout.write(
-                    f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
-                )
-                sys.stdout.flush()
-    print()  # 避免上面\r 回车符
+#                 ###这是下载实现进度显示####
+#                 done = int(50 * temp_size / total_size)
+#                 sys.stdout.write(
+#                     f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
+#                 )
+#                 sys.stdout.flush()
+#     print()  # 避免上面\r 回车符
 
 def file_writer(file_path, content):
     with open(file_path, 'a', encoding='utf-8') as file:
