@@ -68,6 +68,33 @@ class Downloader:
                 prev_downloaded = current
                 self.progress_bar.set_postfix({'speed': f"{speed/1024:.2f}KB/s"})
 
+    def _download_chunk(self, start, end, chunk_id):  # 新增修复的下载分块方法
+        """下载指定分块"""
+        headers = {'Range': f'bytes={start}-{end}'}
+        response = requests.get(self.url, headers=headers, stream=True)
+        response.raise_for_status()
+
+        # 创建临时目录
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
+
+        temp_path = os.path.join(self.temp_dir, f"part_{chunk_id}")
+        with open(temp_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    self._update_progress(len(chunk))  # 更新进度
+
+    def _merge_temp_files(self):  # 新增修复的合并文件方法
+        """合并临时分块文件"""
+        with open(self.file_path, 'wb') as main_file:
+            for i in range(self.num_chunks):
+                temp_path = os.path.join(self.temp_dir, f"part_{i}")
+                with open(temp_path, 'rb') as temp_file:
+                    main_file.write(temp_file.read())
+                os.remove(temp_path)
+        os.rmdir(self.temp_dir)
+                   
     def download(self):
         """下载主逻辑"""
         if self.enable_progress:
