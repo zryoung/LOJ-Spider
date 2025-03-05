@@ -1,9 +1,10 @@
+from datetime import timedelta, timezone, datetime
 import functools
 import json
 import random
 import schedule
 import os, re, requests, sys, yaml
-import time
+# import time
 import threading
 from json import dumps
 from requests import packages
@@ -89,9 +90,24 @@ def get_latest_problem(int_time=24):
     # print(list)
 
     for item in list:
-        interval_time = (time.time() - time.mktime(
-            time.strptime(item["meta"]["publicTime"], "%Y-%m-%dT%H:%M:%S.000Z"))) / 60 / 60  # 获取1天内更新的题目
-        if interval_time <= int_time:  # 1小时内更新的题目
+        
+        # 假设你有一个 UTC 时间字符串
+        utc_time_str = item["meta"]["publicTime"]
+
+        # 将字符串解析为 datetime 对象，并指定时区为 UTC
+        utc_time = datetime.strptime(utc_time_str, "%Y-%m-%dT%H:%M:%S.000Z").replace(tzinfo=timezone.utc)
+
+        # 获取当前的 UTC 时间
+        current_utc_time = datetime.now(timezone.utc)
+
+        # 计算时间差
+        time_difference = current_utc_time - utc_time
+
+        # 获取时间差的秒数
+        difference_in_seconds = time_difference.total_seconds()
+        
+        interval_time = difference_in_seconds / 3600 
+        if interval_time <= int_time:  
             print("get new problem.", item["meta"]["displayId"])
             try:
                 pid = item["meta"]["displayId"]
