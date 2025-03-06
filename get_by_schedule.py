@@ -93,67 +93,41 @@ def get_latest_problem(int_time=24):
         
         # 假设你有一个 UTC 时间字符串
         utc_time_str = item["meta"]["publicTime"]
-
         # 将字符串解析为 datetime 对象，并指定时区为 UTC
         utc_time = datetime.strptime(utc_time_str, "%Y-%m-%dT%H:%M:%S.000Z").replace(tzinfo=timezone.utc)
-
         # 获取当前的 UTC 时间
         current_utc_time = datetime.now(timezone.utc)
-
         # 计算时间差
         time_difference = current_utc_time - utc_time
-
         # 获取时间差的秒数
-        difference_in_seconds = time_difference.total_seconds()
-        
+        difference_in_seconds = time_difference.total_seconds()        
         interval_time = difference_in_seconds / 3600 
+
+        p_list = []
         if interval_time <= int_time:  
             print("get new problem.", item["meta"]["displayId"])
             try:
                 pid = item["meta"]["displayId"]
-                message = get_problem('https', 'loj.ac', pid)
-                logger.info(message)
+                p_list.append(pid)
             except Exception as e:
                 logger.error(f'{pid},message:{e}')
 
+    get_problem_from_list(p_list=p_list)
+
 
 @catch_exceptions()
-def get_problem_from_list():
-    pid = pid_list[0]
-    # print(pid)
-    pid_list.pop(0)
-    try:
-        message = get_problem('https', 'loj.ac', pid)
-        logger.info(message)
-    except Exception as e:
-        logger.error(f'{pid},message:{e}')
+def get_problem_from_list(p_list):
+    for pid in p_list:
+        try:
+            message = get_problem('https', 'loj.ac', pid)
+            logger.info(message)
+        except Exception as e:
+            logger.error(f'{pid},message:{e}')
 
-
-def run_by_schedule():
-    # nowTime = time.strftime("%H:%M", time.localtime())
-    # print(nowTime)
-    
-    # schedule.every().day.at(nowTime).do(getNewProblem)  # 每天的4:30执行一次任务
-    schedule.every(10).minutes.do(get_problem_from_list)  # 每10分钟
-    # schedule.every().hour.do(getNewProblem)  # 每小时执行一次
-    # schedule.every().day.at("10:30").do(job)
-    # schedule.every().monday.do(job)
-    # schedule.every().wednesday.at("13:15").do(job)
-    # schedule.run_all()
-    
-    while len(pid_list):
-        schedule.run_pending()
-        time.sleep(1)
 
 if __name__ == '__main__':
     logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
     
-    # with open(os.path.join(DOWNLOAD_PATH, 'pid_list.json'), 'r') as f:
-    #     pid_list = json.load(f)
-    # # print(pid_list)
-    # logger.info(f'开始题号：{pid_list[0]}')
-    # run_by_schedule()
-
     int_time = 24 #默认爬取24小时内题目
     if len(sys.argv)==2:
         int_time = int(sys.argv[1]) #运行参数设置最新题目时间段
