@@ -113,6 +113,7 @@ def get_latest_problem(int_time=24):
                 logger.error(f'{pid},message:{e}')
 
     get_problem_from_list(p_list=p_list)
+    print(f"wait next time ({int_time} hours later) to get new problem.")
 
 
 @catch_exceptions()
