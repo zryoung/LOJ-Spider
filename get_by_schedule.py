@@ -18,7 +18,7 @@ from loguru import logger
 from util import request_post
 
 
-pid_list = []
+# pid_list = []
 
 def catch_exceptions(cancel_on_failure=False):
     def catch_exceptions_decorator(job_func):
@@ -40,26 +40,15 @@ def catch_exceptions(cancel_on_failure=False):
 def get_pid_list():    
     skipCount = 0
     takeCount = 50
+    pid_list = []
     try:
         num = query_problem_set(skipCount, takeCount)["count"]
         print(f'题目总数：{num}')
-        pid_list = []
-        # result = query_problem_set(skipCount, num)["result"]
-        # for item in result:
-        #     pid_list.append(item['meta']['displayId'])
-        # return pid_list
+        
         for skipCount in range(2967, num, takeCount):
             logger.info(f'获取题号列表{skipCount}')
             result = query_problem_set(skipCount, takeCount)["result"]
-            # try:
-            #     result = query_problem_set(skipCount, takeCount)["result"]
-            # except:
-            #     # time.sleep(5)
-            #     logger.exception('异常')
-            #     result = query_problem_set(skipCount, takeCount)["result"]
-            # print(result)
-            # pid_list = [item['meta']['displayId'] for item in result]
-            # print(pid_list)
+
             for item in result:
                 pid_list.append(item['meta']['displayId'])
             # print(skipCount)
@@ -89,6 +78,7 @@ def get_latest_problem(int_time=24):
     }).json()["latestUpdatedProblems"]
     # print(list)
 
+    p_list = []
     for item in list:
         
         # 假设你有一个 UTC 时间字符串
@@ -100,10 +90,10 @@ def get_latest_problem(int_time=24):
         # 计算时间差
         time_difference = current_utc_time - utc_time
         # 获取时间差的秒数
-        difference_in_seconds = time_difference.total_seconds()        
+        difference_in_seconds = time_difference.total_seconds()
         interval_time = difference_in_seconds / 3600 
 
-        p_list = []
+        
         if interval_time <= int_time:  
             print("get new problem.", item["meta"]["displayId"])
             try:
