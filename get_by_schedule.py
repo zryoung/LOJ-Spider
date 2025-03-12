@@ -115,6 +115,9 @@ def get_problem_from_list(p_list):
         except Exception as e:
             logger.error(f'{pid},message:{e}')
 
+def run_in_thread(func, *args, **kwargs):
+    thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+    thread.start()
 
 if __name__ == '__main__':
     logger.add(os.path.join(DOWNLOAD_PATH, 'log.txt'))
@@ -123,8 +126,8 @@ if __name__ == '__main__':
     if len(sys.argv)==2:
         int_time = int(sys.argv[1]) #运行参数设置最新题目时间段
     # print(int_time)
-    get_latest_problem(int_time)
-    schedule.every(int_time).hours.do(get_latest_problem, int_time=int_time)
+    run_in_thread(get_latest_problem, int_time)
+    schedule.every(int_time).hours.do(run_in_thread, get_latest_problem, int_time=int_time)
     while True:
         schedule.run_pending()
         time.sleep(1)
