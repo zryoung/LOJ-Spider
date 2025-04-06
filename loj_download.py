@@ -63,6 +63,7 @@ def get_problem(protocol, host, pid):
     ).json()
     
     if not result.get('localizedContentsOfAllLocales'):
+        logger.error(f'{pid}没有该题')
         return f'{pid}没有该题'
     
     title = [*filter(lambda x: x['locale'] == 'zh_CN', result['localizedContentsOfAllLocales'])][0]['title']
@@ -268,8 +269,8 @@ def get_problem(protocol, host, pid):
     for thread in threads:
         thread.join()
 
-    message = f'{pid}下载完成。'
-    return message
+    logger.info(f'{pid}下载完成。')
+    return f'{pid}下载完成。'
    
 
 def run(url: str):
