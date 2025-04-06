@@ -70,48 +70,58 @@ def query_problem_set(skipCount, takeCount):
                 ).json()
 
 
-def get_latest_problem(int_time=24):
-    logger.info(f"获取最新题目({int_time}小时内)")
-    list = request_get("https://api.loj.ac/api/homepage/getHomepage?locale=zh_CN", headers={
-        "Content-Type": "application/json",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
-    }).json()["latestUpdatedProblems"]
-    # print(list)
+# 新增一个变量来跟踪当前的查询时间范围
+current_query_time = 0
 
-    p_list = []
-    for item in list:
-        
-        # 假设你有一个 UTC 时间字符串
-        utc_time_str = item["meta"]["publicTime"]
-        # 将字符串解析为 datetime 对象，并指定时区为 UTC
-        utc_time = datetime.strptime(utc_time_str, "%Y-%m-%dT%H:%M:%S.000Z").replace(tzinfo=timezone.utc)
-        # 获取当前的 UTC 时间
-        current_utc_time = datetime.now(timezone.utc)
-        # 计算时间差
-        time_difference = current_utc_time - utc_time
-        # 获取时间差的秒数
-        difference_in_seconds = time_difference.total_seconds()
-        interval_time = difference_in_seconds / 3600 
+@catch_exceptions()
+def get_latest_problem():
+    global current_query_time
+    logger.info(f"获取最新题目({current_query_time}小时内)")
+    try:
+        list = request_get("https://api.loj.ac/api/homepage/getHomepage?locale=zh_CN", headers={
+            "Content-Type": "application/json",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.18 Safari/537.36 Edg/93.0.961.10"
+        }).json()["latestUpdatedProblems"]
+        # print(list)
 
-        
-        if interval_time <= int_time:  
-            print("get new problem.", item["meta"]["displayId"])
-            try:
-                pid = item["meta"]["displayId"]
-                p_list.append(pid)
-            except Exception as e:
-                logger.error(f'{pid},message:{e}')
+        p_list = []
+        for item in list:
+            # 假设你有一个 UTC 时间字符串
+            utc_time_str = item["meta"]["publicTime"]
+            # 将字符串解析为 datetime 对象，并指定时区为 UTC
+            utc_time = datetime.strptime(utc_time_str, "%Y-%m-%dT%H:%M:%S.000Z").replace(tzinfo=timezone.utc)
+            # 获取当前的 UTC 时间
+            current_utc_time = datetime.now(timezone.utc)
+            # 计算时间差
+            time_difference = current_utc_time - utc_time
+            # 获取时间差的秒数
+            difference_in_seconds = time_difference.total_seconds()
+            interval_time = difference_in_seconds // 3600 
 
-    get_problem_from_list(p_list=p_list)
-    print(f"wait next time ({int_time} hours later) to get new problem.")
+            if interval_time <= current_query_time:  
+                print("get new problem.", item["meta"]["displayId"])
+                try:
+                    pid = item["meta"]["displayId"]
+                    p_list.append(pid)
+                except Exception as e:
+                    logger.error(f'{pid},message:{e}')
+
+        get_problem_from_list(p_list=p_list)
+        print(f"wait next time ({int_time} hours later) to get new problem.")
+        # 如果获取成功，恢复查询时间范围为 int_time 小时
+        current_query_time = int_time
+    except Exception as e:
+        logger.error(f"获取最新题目出错: {e}")
+        # 如果出错，增加查询时间范围
+        current_query_time += int_time
+        print(f"获取失败，下次将获取 {current_query_time} 小时内的题目。")
 
 
 @catch_exceptions()
 def get_problem_from_list(p_list):
     for pid in p_list:
         try:
-            message = get_problem('https', 'loj.ac', pid)
-            logger.info(message)
+            run_in_thread(get_problem, 'https', 'loj.ac', pid)
         except Exception as e:
             logger.error(f'{pid},message:{e}')
 
@@ -125,9 +135,10 @@ if __name__ == '__main__':
     int_time = 24 #默认爬取24小时内题目
     if len(sys.argv)==2:
         int_time = int(sys.argv[1]) #运行参数设置最新题目时间段
-    # print(int_time)
-    run_in_thread(get_latest_problem, int_time)
-    schedule.every(int_time).hours.do(run_in_thread, get_latest_problem, int_time=int_time)
+    current_query_time = int_time
+    run_in_thread(get_latest_problem)
+    schedule.every(int_time).hours.do(run_in_thread, get_latest_problem)
+
     while True:
         schedule.run_pending()
         time.sleep(1)
