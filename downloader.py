@@ -4,6 +4,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import time
+import uuid
 
 class Downloader:
     def __init__(self, url, file_path, num_chunks=4, enable_progress=False):
@@ -12,7 +13,8 @@ class Downloader:
         self.num_chunks = num_chunks
         self.file_size = 0
         self.support_range = False
-        self.temp_dir = "temp_parts"
+        # 使用 uuid 生成唯一的临时目录名
+        self.temp_dir = f"temp_parts_{uuid.uuid4().hex}"
         
         # 进度控制相关
         self.enable_progress = enable_progress  # 新增控制开关
