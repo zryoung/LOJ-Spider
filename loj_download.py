@@ -1,6 +1,7 @@
 ## loj-download的python版
 
 
+from concurrent.futures import ThreadPoolExecutor
 import json
 import random
 import os, re, requests, sys, yaml, time
@@ -14,6 +15,7 @@ from tenacity import retry, stop_after_attempt, wait_random
 from loguru import logger
 
 from config import DOWNLOAD_PATH
+from downloader import Downloader
 from util import create_writer, get_and_replace_images, log_while_last_retry, ordered_yaml_dump, request_get, request_post, resume_download
 
 packages.urllib3.disable_warnings()  # 去除警告信息
@@ -37,7 +39,7 @@ LanguageMap = {
 
 @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry,wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
-
+    logger.info(f'正在获取题目{pid}...')
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
     result = request_post(
         url,
@@ -242,37 +244,28 @@ def get_problem(protocol, host, pid):
             filename = f['filename']
         size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
         tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
-
-
-    # except Exception as e:
-    #     logger.error(f'{pid} 获取测试数据出错。原因：{e}')
     
-    # 多线程下载
-    threads = []
-    for name, type, url, expected_size in tasks:
-        try:
+    # 使用线程池来管理下载任务
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(download_file, url, os.path.join(problem_path, type, name), size) for name, type, url, size in tasks]
+        for future in futures:
+            future.result()  # 等待所有任务完成
             
-            filepath = os.path.join(problem_path, type, name)
-            if os.path.exists(filepath):
-                temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
-                # 如果文件已下载完成，则不加入线程池
-                if temp_size == expected_size:
-                    continue
-
-            thread = threading.Thread(target=resume_download, args=(url, filepath))
-            thread.start()
-            threads.append(thread)            
-        except Exception as e:
-            logger.error(f'{pid} 数据下载出错。错误原因：{e}')
-            logger.error(f"\n{traceback.format_exc()}\n")
-            # raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
-    for thread in threads:
-        thread.join()
-
     logger.info(f'{pid}下载完成。')
     return f'{pid}下载完成。'
    
-
+def download_file(url, filepath, expected_size):
+    try:
+        if os.path.exists(filepath):
+            temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
+            # 如果文件已下载完成，则不下载
+            if temp_size == expected_size:
+                return
+        downloader = Downloader(url, filepath, num_chunks=4, enable_progress=False)
+        downloader.download()
+    except Exception as e:
+        logger.error(f'数据下载出错。错误原因：{e}')
+        logger.error(f"\n{traceback.format_exc()}\n")
 def run(url: str):
     if re.match(r'^(.+)/(\d+)\.\.(\d+)$', url):
         res = re.match(r'^(.+)/(\d+)\.\.(\d+)$', url)
@@ -292,15 +285,20 @@ def run(url: str):
         assert re.match(RE_SYZOJ, base), 'prefix'
         protocol, host = urlparse(base).scheme, urlparse(base).netloc
 
-        for i in range(start, end + 1):
-            if version == 3:
-                try:
-                    time.sleep(random.random()*5)
-                    message = get_problem(protocol, host, i)
-                    logger.info(message)
-                except Exception as e:
-                    logger.error(f'{i}出错，出错原因：{e}')
-                    logger.error(f"\n{traceback.format_exc()}\n")
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            futures = [executor.submit(get_problem, protocol, host, i) for i in range(start, end + 1)]
+            for future in futures:
+                future.result()  # 等待所有任务完成
+
+        # for i in range(start, end + 1):
+        #     if version == 3:
+        #         try:
+        #             time.sleep(random.random()*5)
+        #             message = get_problem(protocol, host, i)
+        #             logger.info(message)
+        #         except Exception as e:
+        #             logger.error(f'{i}出错，出错原因：{e}')
+        #             logger.error(f"\n{traceback.format_exc()}\n")
             # else:
             #     await v2(f"{prefix}{i}/")
         return
