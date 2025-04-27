@@ -16,22 +16,20 @@ def get_random_user_agent():
     return USER_AGENTS[uuid.uuid4().int % len(USER_AGENTS)]
 
 class Downloader:
-    def __init__(self, url, file_path, num_chunks=4, enable_progress=False):
+    def __init__(self, url, file_path, num_chunks=4, enable_progress=False, timeout=10):
         self.url = url
         self.file_path = file_path
         self.num_chunks = num_chunks
         self.file_size = 0
         self.support_range = False
-        # 使用 uuid 生成唯一的临时目录名
         self.temp_dir = f"temp_parts_{uuid.uuid4().hex}"
         self.headers = {'User-Agent': get_random_user_agent()}
-        
-        # 进度控制相关
-        self.enable_progress = enable_progress  # 新增控制开关
+        self.enable_progress = enable_progress
         self.downloaded = 0
         self.lock = threading.Lock()
         self.progress_bar = None
         self.last_update_time = time.time()
+        self.timeout = timeout  # 新增超时设置
         
         self._get_file_info()
 
@@ -41,15 +39,18 @@ class Downloader:
             self.downloaded = os.path.getsize(self.file_path)
         
         try:
-            
-            with requests.head(self.url, allow_redirects=True, headers=self.headers) as response:
+            with requests.head(self.url, allow_redirects=True, headers=self.headers, timeout=self.timeout) as response:
+                response.raise_for_status()  # 检查响应状态码
                 self.support_range = 'bytes' in response.headers.get('Accept-Ranges', '')
-                self.file_size = int(response.headers.get('Content-Length', 0))
+                content_length = response.headers.get('Content-Length')
+                if content_length:
+                    self.file_size = int(content_length)
+                else:
+                    logging.warning("未获取到文件大小，可能会影响下载完整性检查")
         except requests.RequestException as e:
             logging.error(f"获取文件信息失败: {e}")
             raise
         
-        # 根据开关初始化进度条
         if self.enable_progress and self.progress_bar is None:
             self.progress_bar = tqdm(
                 total=self.file_size,
@@ -58,7 +59,7 @@ class Downloader:
                 unit_divisor=1024,
                 initial=self.downloaded,
                 desc="下载进度",
-                disable=not self.enable_progress  # 关键修改点
+                disable=not self.enable_progress
             )
 
     def _download_chunk(self, start, end, chunk_id):
@@ -70,7 +71,7 @@ class Downloader:
 
         headers = {'Range': f'bytes={start}-{end}', 'User-Agent': get_random_user_agent()}
         try:
-            with requests.get(self.url, headers=headers, stream=True) as response:
+            with requests.get(self.url, headers=headers, stream=True, timeout=self.timeout) as response:
                 response.raise_for_status()
 
                 if not os.path.exists(self.temp_dir):
@@ -144,7 +145,7 @@ class Downloader:
             try:
                 if os.path.exists(self.file_path):
                     actual_size = os.path.getsize(self.file_path)
-                    if actual_size > self.file_size:
+                    if self.file_size > 0 and actual_size > self.file_size:
                         logging.info("已下载文件大小超过真实大小，删除文件并重新下载")
                         os.remove(self.file_path)
                         self.downloaded = 0
@@ -173,25 +174,30 @@ class Downloader:
                     headers = {"User-Agent": get_random_user_agent()}
                     if self.downloaded > 0:
                         headers['Range'] = f'bytes={self.downloaded}-'
-                    with requests.get(self.url, headers=headers, stream=True) as response:
+                    with requests.get(self.url, headers=headers, stream=True, timeout=self.timeout) as response:
                         with open(self.file_path, 'ab') as f:
                             for chunk in response.iter_content(chunk_size=8192):
                                 if chunk:
                                     f.write(chunk)
                                     self._update_progress(len(chunk))
                 
-                if os.path.exists(self.file_path) and os.path.getsize(self.file_path) == self.file_size:
-                    if self.enable_progress:
-                        self.progress_bar.close()
-                    logging.info("下载完成")
-                    return
+                if os.path.exists(self.file_path):
+                    final_size = os.path.getsize(self.file_path)
+                    if self.file_size > 0 and final_size == self.file_size:
+                        if self.enable_progress:
+                            self.progress_bar.close()
+                        logging.info("下载完成")
+                        return
+                    else:
+                        logging.info(f"下载的文件可能不完整，最终大小: {final_size}，期望大小: {self.file_size}，尝试重新下载 (重试次数: {retries + 1}/{max_retries})")
                 else:
-                    logging.info(f"下载的文件可能不完整，尝试重新下载 (重试次数: {retries + 1}/{max_retries})")
-                    if os.path.exists(self.file_path):
-                        os.remove(self.file_path)
-                    self.downloaded = 0
-                    if self.enable_progress:
-                        self.progress_bar.reset(total=self.file_size)
+                    logging.info(f"下载的文件不存在，尝试重新下载 (重试次数: {retries + 1}/{max_retries})")
+
+                if os.path.exists(self.file_path):
+                    os.remove(self.file_path)
+                self.downloaded = 0
+                if self.enable_progress:
+                    self.progress_bar.reset(total=self.file_size)
 
             except Exception as e:
                 if self.enable_progress:
