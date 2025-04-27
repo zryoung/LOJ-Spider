@@ -37,7 +37,10 @@ LanguageMap = {
 
 @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry,wait=wait_random(1, 3),reraise=True)
 def get_problem(protocol, host, pid):
-
+    '''
+    获取题目信息
+    '''
+    logger.info(f'开始获取题目：{pid}')
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/getProblem"    
     result = request_post(
         url,
