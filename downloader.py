@@ -214,5 +214,5 @@ class Downloader:
 if __name__ == "__main__":
     url = "http://lg-sin.fdcservers.net/10GBtest.zip"  # 10GB测试文件
     file_path = "largefile.zip"
-    downloader = Downloader(url, file_path, num_chunks=4)
+    downloader = Downloader(url, file_path, num_chunks=4, enable_progress=True)
     downloader.download()
