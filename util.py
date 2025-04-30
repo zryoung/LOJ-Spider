@@ -228,56 +228,6 @@ def base64_to_img(bstr, file_path):
     file.write(imgdata)
     file.close()
     
-
-# @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
-# def resume_download(url, file_path):
-    
-#     # 这重要了，先看看本地文件下载了多少
-#     if os.path.exists(file_path):
-#         temp_size = os.path.getsize(file_path)  # 本地已经下载的文件大小
-#     else:
-#         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-#         temp_size = 0
-        
-#     # try:
-#     # 第一次请求是为了得到文件总大小
-#     r1 = requests.head(url, stream=True, verify=False)
-#     # 有些文件没有conteng-length这个信息
-#     if not r1.headers.get("Content-Length"):
-#         r = requests.get(url, stream=True, verify=False)
-#         with open(file_path, 'ab') as file:
-#             file.write(r.content)
-#         return
-    
-#     total_size = int(r1.headers["Content-Length"])
-
-
-#     # print(f"{temp_size=}\t{total_size=}\t剩余：{total_size-temp_size}")
-
-#     if temp_size > total_size:
-#         os.remove(file_path)
-#         temp_size = 0
-#     elif temp_size == total_size:
-#         return
-#     # 核心部分，这个是请求下载时，从本地文件已经下载过的后面下载
-#     headers = {"Range": f"bytes={temp_size}-"}
-#     res = request_get(url, stream=True, headers=headers,timeout=(6.1,21.1))
-
-#     with open(file_path, "ab") as file:
-#         for chunk in res.iter_content(chunk_size=1024):
-#             if chunk:
-#                 temp_size += len(chunk)
-#                 file.write(chunk)
-#                 file.flush()
-
-#                 ###这是下载实现进度显示####
-#                 done = int(50 * temp_size / total_size)
-#                 sys.stdout.write(
-#                     f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
-#                 )
-#                 sys.stdout.flush()
-#     print()  # 避免上面\r 回车符
-
 def file_writer(file_path, content):
     with open(file_path, 'a', encoding='utf-8') as file:
         yaml.dump(
@@ -309,32 +259,6 @@ def get_filename_and_extension(url):
     filename = filename_with_extension.split('.')[0]
     extension = filename_with_extension.split('.')[-1]
     return filename, extension
-
-def get_and_replace_images(content, picpath, host=None):
-        
-    # TODO:以下修复可能不完善
-    # 后面的"230"不获取，不然导致下载url出错
-    # ![example.png](https://img.loj.ac.cn/2024/09/06/bc7efceff875c.png "230")
-    img_arr = re.findall(r'!\[.*?\]\((.*?) \".*?\"\)', content)
-    img_arr += re.findall(r'!\[.*?\]\((.*?)\)', content)
-
-    if img_arr:
-        os.makedirs(picpath, exist_ok=True)
-    for img_url in img_arr:
-        if not img_url.startswith('http'):
-            if host:
-                img_url = host + img_url
-            else:
-                logger.error(f'图片地址不完整：{img_url}')
-                continue
-        filename, extension = get_filename_and_extension(url=img_url)
-        pic_file_path = os.path.join(picpath, f'{filename}.{extension}')
-        try:
-            resume_download(url=img_url, file_path=pic_file_path)
-            content = content.replace(img_url, f'file://{filename}.{extension}?type=additional_file')
-        except Exception as e:
-            logger.error(f'图片下载出错：{picpath}-{img_url},错误信息：{e}') 
-    return content
 
 def ordered_yaml_dump(data, stream=None, Dumper=yaml.SafeDumper, **kwds):
     class OrderedDumper(Dumper):
