@@ -1,6 +1,5 @@
 ## loj-download的python版
 
-
 import json
 import random
 import os, re, requests, sys, yaml, time
@@ -160,10 +159,7 @@ def get_problem(protocol, host, pid):
             if judge.get("subtasks"):
                 config["subtasks"] = []
                 for subtask in judge["subtasks"]:
-                    # current = OrderedDict()
                     current = dict()
-                    # if subtask.get("points"):
-                    #     current["score"] = subtask["points"]
                     current["score"] = subtask.get("points", 100)
                     current["type"] = ScoreTypeMap[subtask["scoringType"]]
                     # TODO:559,交互题，没有output,出错
@@ -176,18 +172,12 @@ def get_problem(protocol, host, pid):
                         if "outputFile" in item:
                             case["output"] = item["outputFile"]
                         current["cases"].append(case)
-                    # current["cases"] =[{'input': i['inputFile'], 'output': i['outputFile']} for i in subtask.get("testcases", [])]
-                    
-                    # if subtask.get("dependencies"):
-                    #     current["if"] = subtask["dependencies"]
+
                     current["if"] = subtask.get("dependencies", [])
                     config["subtasks"].append(current)
             writer('testdata/config.yaml', ordered_yaml_dump(config))
         except Exception as e:
             logger.error(f'\n{traceback.format_exc()}\n')
-
-    # try:
-
 
     url = f"{protocol}://{'api.loj.ac' if host=='loj.ac' else host}/api/problem/downloadProblemFiles"  
     # testData
@@ -246,15 +236,10 @@ def get_problem(protocol, host, pid):
         size = [*filter(lambda x: x['filename']==f['filename'], result['additionalFiles'])][0]['size']
         tasks.append([ filename , 'additional_file', f['downloadUrl'], size])
 
-
-    # except Exception as e:
-    #     logger.error(f'{pid} 获取测试数据出错。原因：{e}')
-    
     # 多线程下载
     threads = []
     for name, type, url, expected_size in tasks:
         try:
-            
             filepath = os.path.join(problem_path, type, name)
             if os.path.exists(filepath):
                 temp_size = os.path.getsize(filepath)  # 本地已经下载的文件大小
@@ -262,13 +247,17 @@ def get_problem(protocol, host, pid):
                 if temp_size == expected_size:
                     continue
 
+            # 检查当前运行的线程数，达到 5 则等待一个线程结束
+            while len([t for t in threads if t.is_alive()]) >= 5:
+                time.sleep(0.1)
+
             thread = threading.Thread(target=resume_download, args=(url, filepath))
             thread.start()
             threads.append(thread)            
         except Exception as e:
             logger.error(f'{pid} 数据下载出错。错误原因：{e}')
             logger.error(f"\n{traceback.format_exc()}\n")
-            # raise Exception(f'{pid} 数据下载出错。错误原因：{e}')
+
     for thread in threads:
         thread.join()
 
@@ -326,8 +315,6 @@ if __name__ == "__main__":
     else:
         try:
             run(sys.argv[1])
-            # 以下报错：a coroutine was expected, got None
-            # asyncio.run(run(sys.argv[1]))
         except Exception as e:
             logger.error(e)
 
