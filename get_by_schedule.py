@@ -96,8 +96,9 @@ def get_latest_problem():
             time_difference = current_utc_time - utc_time
             # 获取时间差的秒数
             difference_in_seconds = time_difference.total_seconds()
-            interval_time = difference_in_seconds // 3600 
+            interval_time = difference_in_seconds / 3600 
 
+            logger.debug(f"{item['meta']['displayId']}:间隔时间:{interval_time},查询时间:{current_query_time}")
             if interval_time <= current_query_time:  
                 print("get new problem.", item["meta"]["displayId"])
                 try:
