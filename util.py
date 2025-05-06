@@ -9,57 +9,14 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_random
 import yaml
 
-from downloader import Downloader
-
 BASE64 = r"^data:\S+/(\S+);base64,?(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)){1}"
 
-def log_while_last_retry(retry_state):
-    logger.error(retry_state.outcome.result())  # 打印原函数的返回值
-
-# @logger.catch
-@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
-def request_post(url, headers=None, data=None, json=None, stream=True,verify=False, timeout=(5, 5)):
-    return requests.post(
-        url,
-        stream=stream,
-        verify=verify,
-        timeout=timeout, 
-        headers=headers,
-        data=data,
-        json=json,
-    )
-
-# @logger.catch
-@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry,wait=wait_random(1, 3),reraise=True)
-def request_get(url, params=None, headers=None, stream=False,verify=False, timeout=(5, 5)):
-    return requests.get(
-        url, 
-        params=params,
-        headers=headers,
-        stream=stream,
-        verify=verify,
-        timeout=timeout,
-    )
-
-
-
-@retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
-def resume_download(url, file_path):
+# @retry(stop=stop_after_attempt(5), retry_error_callback=log_while_last_retry, wait=wait_random(1, 3), reraise=True)
+# def resume_download(url, file_path):
     # os.makedirs(os.path.dirname(file_path), exist_ok=True)
     # downloader = Downloader(url, file_path)
     # downloader.download()
-    import json
-import os
-import re
-import sys
-import base64
-from urllib.parse import urlparse
-import requests
-from loguru import logger
-from tenacity import retry, stop_after_attempt, wait_random
-import yaml
 
-BASE64 = r"^data:\S+/(\S+);base64,?(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)){1}"
 
 def log_while_last_retry(retry_state):
     logger.error(retry_state.outcome.result())  # 打印原函数的返回值
@@ -133,11 +90,11 @@ def resume_download(url, file_path):
                 file.flush()
 
                 ###这是下载实现进度显示####
-                done = int(50 * temp_size / total_size)
-                sys.stdout.write(
-                    f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
-                )
-                sys.stdout.flush()
+                # done = int(50 * temp_size / total_size)
+                # sys.stdout.write(
+                #     f"\r[{'█' * done}{' ' * (50 - done)}] {int(100 * temp_size / total_size):3d}% \t{file_path} "
+                # )
+                # sys.stdout.flush()
     print()  # 避免上面\r 回车符
 
 def file_writer(file_path, content):
